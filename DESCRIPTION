@@ -1,0 +1,19 @@
+Package: RNAseqR
+Title: RNAseq DE Analysis Downstream from Nextflow Pipelines
+Version: 0.0.0.9000
+Authors@R:
+    person(given = "Bruce",
+           family = "Moran",
+           role = c("aut", "cre"),
+           email = "bruce01campus@gmail.com",
+           comment = c(ORCID = "0000-0002-7266-0265"))
+Description: Move from standardised output from Nextflow pipelines (nf-core-rnaseq, brucemoran-RNAseq-kallisto)
+    to DE analysis using bare-bones input; 'DESeq2', 'edgeR' and 'limma' DE callers, with overlaps considered
+    and 'fgsea' for pathway analysis.
+License: `use_mit_license()`
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.1
+Imports:
+  magrittr
