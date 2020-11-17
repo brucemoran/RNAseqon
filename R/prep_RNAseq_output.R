@@ -45,6 +45,7 @@ nf_core_rnaseq_featco_parser <- function(tag = NULL){
 #'
 #' @param metadata_csv CSV format file with columns:
 #'        'sample' that has exact dir matching which contains 'adundance.h5' (recursively)
+#' @param data_dir dir from which to recursively search for abundance.h5 for samples
 #' @param agg_col column on which to aggregate gene_mode
 #' @param genome_prefix string of a genome in biomart$dataset, suffixed with '_gene_ensembl'
 #' @param server set to anything but NULL to allow threading
@@ -52,7 +53,7 @@ nf_core_rnaseq_featco_parser <- function(tag = NULL){
 #' @importFrom magrittr '%>%'
 #' @export
 
-brucemoran_rnaseq_kallisto_parser <- function(metadata_csv, agg_col = "ensembl_gene_id", genome_prefix = "hsapiens", server_threads = NULL){
+brucemoran_rnaseq_kallisto_parser <- function(metadata_csv, data_dir = NULL, agg_col = "ensembl_gene_id", genome_prefix = "hsapiens", server_threads = NULL){
 
   ##how much comp resources to allocate
   if(!is.null(server_threads)){
@@ -64,7 +65,7 @@ brucemoran_rnaseq_kallisto_parser <- function(metadata_csv, agg_col = "ensembl_g
   }
 
   ##parse in kallisto output to metadata
-  metadata <- get_metadata(metadata_csv)
+  metadata <- get_metadata(metadata_csv, data_dir)
 
   ##annotation to use
   print("Getting tx2gene object")
@@ -123,9 +124,15 @@ get_tx2gene <- function(genome_prefix){
 #' searches for dir with sampleID, then recursive-searches that for abundance.h5
 #'
 #' @param metadata_csv CSV format file with sample and ontehr columns
+#' @param data_dir dir from which to recursively search for abundance.h5 for samples
 #' @export
 
-get_metadata <- function(metadata_csv){
+get_metadata <- function(metadata_csv, data_dir){
+
+  ##define data_Dir
+  if(is.null(data_dir)){
+    data_dir <- getwd()
+  }
 
   ##find sampleID dirs, if none prompt to ensure same naming
   metadat <- readr::read_csv(metadata_csv)
@@ -134,7 +141,7 @@ get_metadata <- function(metadata_csv){
     stop("Please name a column 'sample'")
   } else {
     ab_list <- lapply(metadat$sample, function(f){
-      files <- dir(recursive = TRUE, full.names = TRUE)
+      files <- dir(path = data_dir, recursive = TRUE, full.names = TRUE)
       abh5 <- grep("abundance.h5",
                    grep(paste0("/", f, "/"), files, value = TRUE),
                    value = TRUE)
