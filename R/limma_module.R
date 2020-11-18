@@ -44,28 +44,34 @@ limma_module <- function(count_data, anno_tb = NULL, tpm_tb = NULL, tag = NULL, 
   cond <- readr::read_csv(metadata_csv)
   cond_df <- as.data.frame(cond)
   rownames(cond_df) <- cond_df[,1]
-  # cond_df <- cond_df[,-1]
+
+  ##overlap w/count_data and sort
+  cond_df <- cond_df[rownames(cond_df) %in% colnames(count_data),]
+  cond_df <- cond_df[sort(rownames(cond_df)),]
 
   ##break design into components
   design_vec <- unlist(lapply(metadata_design, function(f){gsub(" ", "", strsplit(f, "\\+")[[1]])}))
+
+  ##take only cols of interest and define major condition
+  cond_df <- cond_df[,colnames(cond_df) %in% design_vec]
   CONDITION <- rev(design_vec)[1]
-  cond_df[,CONDITION] <- factor(cond_df[,CONDITION])
+
+  ##create factors
+  for(x in 1:length(design_vec)){
+    cond_df[,x] <- factor(cond_df[,x])
+  }
+
+  ##change reference level if specified
   if(!is.null(control_reference)){
     cond_df[,CONDITION] <- relevel(cond_df[,CONDITION], ref = control_reference)
   }
-
-  ##facotrise any other components of design_vec
-  if(length(design_vec) > 1){
-  for(x in 2:dim(cond_df)[2]){
-    cond_df[,rev(design_vec)[x]] <- factor(cond_df[,rev(design_vec)[x]])
-  }}
 
   ##ExpressionSet object
   # eset <- Biobase::ExpressionSet(assayData = as.matrix(count_data),
   #                                phenoData = Biobase::AnnotatedDataFrame(cond_df))
   #
   ##design
-  limma_design <- model.matrix(formula(paste0("~ 0 + ", metadata_design)), data = cond_df)
+  limma_design <- model.matrix(formula(paste0("~ 0 + ", CONDITION)), data = cond_df)
   #
   # ##VOOM - Removing heteroscedascity from count data
   # pdf(paste0(output_dir, "/", tag, ".limma_voom.pdf"))
@@ -77,7 +83,7 @@ limma_module <- function(count_data, anno_tb = NULL, tpm_tb = NULL, tag = NULL, 
   #
   ##make all contrasts of CONDITION, then set into named list
   contrasts <- apply(t(combn(levels(cond_df[,CONDITION]),2)), 1, function(f){
-    paste(paste0(CONDITION, f), collapse="-")
+    paste(paste0(CONDITION, f), collapse=" - ")
   })
   limma_contrasts <- limma::makeContrasts(contrasts = contrasts,
                                           levels = paste0(CONDITION, levels(cond_df[,CONDITION])))
@@ -93,7 +99,8 @@ limma_module <- function(count_data, anno_tb = NULL, tpm_tb = NULL, tag = NULL, 
   limma_logCPM <- edgeR::cpm(limma_dgelist, log=TRUE, prior.count=3)
 
   limma_fit <- limma::lmFit(limma_logCPM, limma_design)
-  limma_fitc <- limma::contrasts.fit(limma_fit, limma_contrasts)
+  limma_fit$coefficients <- limma_fit$coefficients[,colnames(limma_fit$coefficients) %in% rownames(limma_contrasts)]
+  limma_fitc <- limma::contrasts.fit(fit = limma_fit, contrasts = limma_contrasts)
   limma_fite <- limma::eBayes(limma_fitc, trend=TRUE)
 
   limma_res_list <- lapply(seq_along(contrasts), function(f){
@@ -126,7 +133,7 @@ limma_module <- function(count_data, anno_tb = NULL, tpm_tb = NULL, tag = NULL, 
     ress_tb <- ress_tb %>% dplyr::rename("padj" = adj.P.Val)
     readr::write_tsv(ress_tb, paste0(output_dir, "/", tag, ".res.", contrasts[f], ".limma.tsv"))
   })
-  names(limma_res_list) <- contrasts
+  names(limma_res_list) <- gsub(" ", "", contrasts)
   saveRDS(limma_res_list, file = paste0(output_dir, "/", tag, ".limma_res_list.rds"))
 
 }

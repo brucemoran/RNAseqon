@@ -46,7 +46,10 @@ edgeR_module <- function(count_data, anno_tb = NULL, tpm_tb = NULL, tag = NULL, 
   cond <- readr::read_csv(metadata_csv)
   cond_df <- as.data.frame(cond)
   rownames(cond_df) <- cond_df[,1]
-  # cond_df <- cond_df[,-1]
+
+  ##overlap w/count_data and sort
+  cond_df <- cond_df[rownames(cond_df) %in% colnames(count_data),]
+  cond_df <- cond_df[sort(rownames(cond_df)),]
 
   ##break design into components
   design_vec <- unlist(lapply(metadata_design, function(f){gsub(" ", "", strsplit(f, "\\+")[[1]])}))
@@ -56,9 +59,11 @@ edgeR_module <- function(count_data, anno_tb = NULL, tpm_tb = NULL, tag = NULL, 
     cond_df[,CONDITION] <- relevel(cond_df[,CONDITION], ref = control_reference)
   }
   if(length(design_vec) > 1){
-  for(x in 2:dim(cond_df)[2]){
-    cond_df[,rev(design_vec)[x]] <- factor(cond_df[,rev(design_vec)[x]])
-  }}
+    for(x in 2:length(design_vec)){
+      print(x)
+      cond_df[,rev(design_vec)[x]] <- factor(cond_df[,rev(design_vec)[x]])
+    }
+  }
 
   y <- edgeR::DGEList(counts = count_data,
                       samples = cond_df,

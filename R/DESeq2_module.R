@@ -53,19 +53,27 @@ DESeq2_module <- function(count_data, anno_tb = NULL, tpm_tb = NULL, tag = NULL,
   cond <- readr::read_csv(metadata_csv)
   cond_df <- as.data.frame(cond)
   rownames(cond_df) <- cond_df[,1]
-  # cond_df <- cond_df[,-1]
+
+  ##overlap w/count_data and sort
+  cond_df <- cond_df[rownames(cond_df) %in% colnames(count_data),]
+  cond_df <- cond_df[sort(rownames(cond_df)),]
 
   ##break design into components
   design_vec <- unlist(lapply(metadata_design, function(f){gsub(" ", "", strsplit(f, "\\+")[[1]])}))
+
+  ##take only cols of interest and define major condition
+  cond_df <- cond_df[,colnames(cond_df) %in% design_vec]
   CONDITION <- rev(design_vec)[1]
-  cond_df[,CONDITION] <- factor(cond_df[,CONDITION])
+
+  ##create factors
+  for(x in 1:length(design_vec)){
+    cond_df[,x] <- factor(cond_df[,x])
+  }
+
+  ##change reference level if specified
   if(!is.null(control_reference)){
     cond_df[,CONDITION] <- relevel(cond_df[,CONDITION], ref = control_reference)
   }
-  if(length(design_vec) > 1){
-  for(x in 2:dim(cond_df)[2]){
-    cond_df[,rev(design_vec)[x]] <- factor(cond_df[,rev(design_vec)[x]])
-  }}
 
   ##DESeq2DataSet object
   dds <- DESeq2::DESeqDataSetFromMatrix(countData = count_data,
@@ -164,7 +172,8 @@ BMplotPCA <- function(x, intgroup = NULL, ntop = 1500, returnData = FALSE) {
       ggp <- ggplot2::ggplot(data = d, ggplot2::aes(x = PC1,y = PC2, group = group, colour = group, shape = group)) +
              ggplot2::scale_shape_manual(values = 1:nlevels(group)) +
              ggplot2::labs(title = paste0("PCA plot using ", intgroup), x = paste0("PC1: ", round(percentVar[1] *  100), "% variance"),y = paste0("PC2: ", round(percentVar[2] * 100), "% variance")) +
-             ggplot2::annotate("text", x = pca$x[,1], y = pca$x[,2], label = colnames(x), cex = 1.6) + geom_point(size = 3) +
+             ggplot2::annotate("text", x = pca$x[,1], y = pca$x[,2], label = colnames(x), cex = 1.6) +
+             ggplot2::geom_point(size = 3) +
              ggplot2::ggtitle(paste0("PCA plot using ",intgroup))
       }
       if(nlevels(group)<=6){

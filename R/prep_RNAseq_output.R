@@ -48,7 +48,7 @@ nf_core_rnaseq_featco_parser <- function(tag = NULL){
 #' @param data_dir dir from which to recursively search for abundance.h5 for samples
 #' @param agg_col column on which to aggregate gene_mode
 #' @param genome_prefix string of a genome in biomart$dataset, suffixed with '_gene_ensembl'
-#' @param server set to anything but NULL to allow threading
+#' @param server_threads set to anything but NULL to allow threading
 #' @return list object with sleuth object 'so' [[1]] and tx2gene annotation used to create it [[2]]
 #' @importFrom magrittr '%>%'
 #' @export
@@ -59,7 +59,7 @@ brucemoran_rnaseq_kallisto_parser <- function(metadata_csv, data_dir = NULL, agg
   if(!is.null(server_threads)){
     mem_free <- as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo", intern=TRUE))
     ram_per_core_gb <- 8
-    thread_alloc <- round((memfree/1000000)/ram_per_core_gb, 0)-1
+    thread_alloc <- round((mem_free/1000000)/ram_per_core_gb, 0)-1
   } else {
     thread_alloc <- 1
   }
@@ -140,23 +140,24 @@ get_metadata <- function(metadata_csv, data_dir){
   if(length(metadat$sample) == 0){
     stop("Please name a column 'sample'")
   } else {
+    files <- dir(path = data_dir, recursive = TRUE, full.names = TRUE)
     ab_list <- lapply(metadat$sample, function(f){
-      files <- dir(path = data_dir, recursive = TRUE, full.names = TRUE)
       abh5 <- grep("abundance.h5",
                    grep(paste0("/", f, "/"), files, value = TRUE),
                    value = TRUE)
       if(length(abh5) == 1){
         return(abh5)
       } else {
-        print("Found multiple or no files: ")
-        print(abh5)
-        stop(paste0("Please rename sample contents to reflect single samples, or ensure 'abundance.h5' files are in the directory from which you are working (", getwd(), ")"))
+        print(paste0("Found multiple or no files for: ", f))
+        print(paste0("", abh5))
       }
     })
     names(ab_list) <- metadat$sample
     ab_df <- data.frame(sample = names(ab_list), path = unlist(ab_list))
     metadata <- dplyr::left_join(metadat, ab_df)
     metadata$path <- as.character(metadata$path)
+    metadata <- dplyr::filter(.data = metadata, !path %in% "")
+    print(paste0("Found ", dim(metadata)[1], " samples with metadata and abundance.h5"))
     return(metadata)
   }
 }
