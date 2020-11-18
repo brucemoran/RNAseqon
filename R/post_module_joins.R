@@ -104,7 +104,6 @@ found_in_three <- function(master_list, padj = 0.01){
 #' Make venn diagram
 #'
 #' @param master_list list of 3 DE results
-#' @param contrast name of contrast to use for table (should be one of 'names(master_list[[x]])'')
 #' @param padj significance threshold below which to determine significance (adjusted by FDR)
 #' @param output_dir path to where output goes
 #' @param tag string used to prefix output
@@ -112,15 +111,15 @@ found_in_three <- function(master_list, padj = 0.01){
 #' @importFrom magrittr '%>%'
 #' @export
 
-venn_3 <- function(master_list, contrast, tag, output_dir, padj = 0.01){
+venn_3 <- function(master_list, tag, output_dir, padj = 0.01){
 
   print("Running: venn_3()")
 
   ##run over master_list to get number of overlapped genes
-  fitwo <- found_in_two(master_list)
-  fithree <- found_in_three(master_list)
-  fitwo_contrast <- fitwo[[contrast]]
-  fithree_contrast <- fithree[[contrast]]
+  print("Working on found-in-two")
+  fitwo <- suppressMessages(found_in_two(master_list))
+  print("Working on found-in-three")
+  fithree <- suppressMessages(found_in_three(master_list))
 
   ##each master_list for contrast
   unc <- unique(t(combn(x = c(0,0,0,1,1,1,0,0,0,1,1,1), m = 3)))
@@ -128,56 +127,69 @@ venn_3 <- function(master_list, contrast, tag, output_dir, padj = 0.01){
   unct <- unc == 1
 
   ##create list of ensembl_gene_ids per set defined by unc
-  compf_list <- lapply(seq(1:dim(unct)[1]), function(f){
-    compf <- names(master_list)[unct[f,]]
-    print(compf)
-    if(length(compf) == 0){
-      return()
-    } else if(length(compf) == 1){
-      dat <- master_list[[compf]][[contrast]]
-      if(dim(dat)[1] == 0){
+  lapply(names(master_list[[1]]), function(contrast){
+    print(paste0("Working on contrast: ", contrast))
+    compf_list <- lapply(seq(1:dim(unct)[1]), function(f){
+      compf <- names(master_list)[unct[f,]]
+      print(compf)
+      if(length(compf) == 0){
         return()
+      } else if(length(compf) == 1){
+        dat <- master_list[[compf]][[contrast]]
+        if(dim(dat)[1] == 0){
+          return()
+        } else {
+          dat1 <- dplyr::filter(.data = dat, padj < !!padj)
+          dat2 <- dplyr::select(.data = dat1, ensembl_gene_id)
+          as.vector(unlist(dat2))
+        }
+      } else if(length(compf) == 2){
+        ##aready padjusted
+        fitwo_contrast <- fitwo[[contrast]]
+        dat <- fitwo_contrast[[paste(compf, collapse = "-")]]
+        if(dim(dat)[1] == 0){
+          return()
+        } else {
+          dat1 <- dplyr::select(.data = dat, ensembl_gene_id)
+          as.vector(unlist(dat1))
+        }
       } else {
-        dat1 <- dplyr::filter(.data = dat, padj < !!padj)
-        dat2 <- dplyr::select(.data = dat1, ensembl_gene_id)
-        as.vector(unlist(dat2))
+        fithree_contrast <- fithree[[contrast]]
+        dat <- fithree_contrast
+        if(dim(dat)[1] == 0){
+          return()
+        } else {
+          dat1 <- dplyr::select(.data = dat, ensembl_gene_id)
+          as.vector(unlist(dat1))
+        }
       }
-    } else if(length(compf) == 2){
-      ##aready padjusted
-      dat <- fitwo_contrast[[paste(compf, collapse = "-")]]
-      if(dim(dat)[1] == 0){
-        return()
-      } else {
-        dat1 <- dplyr::select(.data = dat, ensembl_gene_id)
-        as.vector(unlist(dat1))
-      }
-    } else {
-      dat <- fithree_contrast
-      if(dim(dat)[1] == 0){
-        return()
-      } else {
-        dat1 <- dplyr::select(.data = dat, ensembl_gene_id)
-        as.vector(unlist(dat1))
-      }
-    }
+    })
+
+    ##compare those lists
+    vdf <- cbind(unc, unlist(lapply(compf_list, length)))
+    colnames(vdf) <- c(names(master_list), "Counts")
+    dir.create(paste0(output_dir, "/venn_3"), showWarnings = FALSE)
+    readr::write_csv(as.data.frame(vdf), file = paste0(output_dir, "/venns", tag, ".", contrast, ".venn_3.csv"))
+
+    ##write venn
+    trip_venn <- VennDiagram::draw.triple.venn(area1 = vdf[4,4],
+                                           area2 = vdf[3,4],
+                                           area3 = vdf[2,4],
+                                           n12 = vdf[6,4],
+                                           n13 = vdf[7,4],
+                                           n23 = vdf[5,4],
+                                           n123 = vdf[8,4],
+                                           category = colnames(vdf)[1:3],
+                                           fill = c("dodgerblue", "orange", "forestgreen"),
+                                           cat.cex = 2, cex = 2)
+    pdf(paste0(output_dir, "/venn_3/", tag, ".", contrast, ".venn_3.pdf"))
+      grid::grid.newpage()
+      title <- grid::textGrob(contrast,
+                              x = 0.2, y = 0.01,
+                              vjust = 0,
+                              gp = grid::gpar(fontsize = 12))
+      gt <- grid::gTree(children = grid::gList(title, trip_venn))
+      grid::grid.draw(gt)
+    dev.off()
   })
-
-  ##compare those lists
-  vdf <- cbind(unc, unlist(lapply(compf_list, length)))
-  colnames(vdf) <- c(names(master_list), "Counts")
-
-  ##write venn
-  trip_venn <- VennDiagram::draw.triple.venn(area1 = vdf[4,4],
-                                         area2 = vdf[3,4],
-                                         area3 = vdf[2,4],
-                                         n12 = vdf[6,4],
-                                         n13 = vdf[7,4],
-                                         n23 = vdf[5,4],
-                                         n123 = vdf[8,4],
-                                         category = colnames(vdf)[1:3],
-                                         fill = c("dodgerblue", "orange", "forestgreen"),
-                                         cat.cex = 2, cex = 2)
-  pdf(paste0(output_dir, "/", tag, ".venn_3.pdf"))
-    grid::grid.draw(trip_venn)
-  dev.off()
 }
