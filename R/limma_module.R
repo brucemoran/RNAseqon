@@ -15,7 +15,7 @@
 #' @importFrom magrittr '%>%'
 #' @export
 
-limma_module <- function(count_data, anno_tb = NULL, tpm_tb = NULL, tag = NULL, metadata_csv = NULL, metadata_design = NULL, control_reference = NULL, output_dir = NULL, delim_samples = "\\."){
+limma_module <- function(count_data, anno_tb = NULL, tpm_tb = NULL, tag = NULL, metadata_csv = NULL, metadata_design = NULL, control_reference = NULL, output_dir = NULL, delim_samples = "\\.", run_zoom = FALSE){
 
   print("Running: limma_module()")
 
@@ -35,10 +35,13 @@ limma_module <- function(count_data, anno_tb = NULL, tpm_tb = NULL, tag = NULL, 
     stop("NBBB that all elements of the design must be names of columns in 'metadata' file")
   }
 
-  # if(is.null(control_reference)){
-  #   print("Please specify a control_reference from a column in metadata_csv for DESeq2")
-  #   print("NB that this should be one of the 'intgroup' levels")
-  # }
+  if(is.null(output_dir)){
+    print("No directory specified for output, the current dir will be used")
+    output_dir <- "./limma"
+  } else {
+    output_dir <- paste0(output_dir, "/limma")
+    dir.create(output_dir, showWarnings = FALSE)
+  }
 
   ##read in condition data
   cond <- readr::read_csv(metadata_csv)
@@ -53,11 +56,11 @@ limma_module <- function(count_data, anno_tb = NULL, tpm_tb = NULL, tag = NULL, 
   design_vec <- unlist(lapply(metadata_design, function(f){gsub(" ", "", strsplit(f, "\\+")[[1]])}))
 
   ##take only cols of interest and define major condition
-  cond_df <- cond_df[,colnames(cond_df) %in% design_vec]
+  cond_df <- cond_df[,colnames(cond_df) %in% c("sample", design_vec)]
   CONDITION <- rev(design_vec)[1]
 
   ##create factors
-  for(x in 1:length(design_vec)){
+  for(x in 1:length(colnames(cond_df))){
     cond_df[,x] <- factor(cond_df[,x])
   }
 
@@ -67,38 +70,36 @@ limma_module <- function(count_data, anno_tb = NULL, tpm_tb = NULL, tag = NULL, 
   }
 
   ##ExpressionSet object
-  # eset <- Biobase::ExpressionSet(assayData = as.matrix(count_data),
-  #                                phenoData = Biobase::AnnotatedDataFrame(cond_df))
-  #
+  eset <- Biobase::ExpressionSet(assayData = as.matrix(count_data),
+                                 phenoData = Biobase::AnnotatedDataFrame(cond_df))
+
   ##design
   limma_design <- model.matrix(formula(paste0("~ 0 + ", CONDITION)), data = cond_df)
-  #
-  # ##VOOM - Removing heteroscedascity from count data
-  # pdf(paste0(output_dir, "/", tag, ".limma_voom.pdf"))
-  #   limma_voom <- limma::voom(eset, limma_design, plot=TRUE)
-  # dev.off()
-  #
-  # ##fitting design with eset
-  # limma_fit <- limma::lmFit(limma_voom, limma_design)
-  #
+
+  if(run_voom == TRUE){
+    ##VOOM - Removing heteroscedascity from count data
+    pdf(paste0(output_dir, "/", tag, ".limma_voom.pdf"))
+      limma_voom <- limma::voom(counts = eset, design = limma_design, plot = TRUE)
+    dev.off()
+    limma_fit <- limma::lmFit(limma_voom, limma_design)
+  }
   ##make all contrasts of CONDITION, then set into named list
   contrasts <- apply(t(combn(levels(cond_df[,CONDITION]),2)), 1, function(f){
     paste(paste0(CONDITION, f), collapse=" - ")
   })
   limma_contrasts <- limma::makeContrasts(contrasts = contrasts,
                                           levels = paste0(CONDITION, levels(cond_df[,CONDITION])))
-  # limma_cfit <- limma::contrasts.fit(limma_fit, limma_contrasts)
-  # limma_fite <- limma::eBayes(limma_cfit)
+  if(run_voom == FALSE){
+    limma_dgelist <- edgeR::DGEList(counts = count_data,
+                                    samples = cond_df,
+                                    group = cond_df[,CONDITION])
+    keep <- edgeR::filterByExpr(limma_dgelist)
+    limma_dgelist <- limma_dgelist[keep,,keep.lib.sizes=FALSE]
+    limma_dgelist <- edgeR::calcNormFactors(limma_dgelist)
+    limma_logCPM <- edgeR::cpm(limma_dgelist, log=TRUE, prior.count=3)
+    limma_fit <- limma::lmFit(limma_logCPM, limma_design)
+  }
 
-  limma_dgelist <- edgeR::DGEList(counts = count_data,
-                                  samples = cond_df,
-                                  group = cond_df[,CONDITION])
-  keep <- edgeR::filterByExpr(limma_dgelist)
-  limma_dgelist <- limma_dgelist[keep,,keep.lib.sizes=FALSE]
-  limma_dgelist <- edgeR::calcNormFactors(limma_dgelist)
-  limma_logCPM <- edgeR::cpm(limma_dgelist, log=TRUE, prior.count=3)
-
-  limma_fit <- limma::lmFit(limma_logCPM, limma_design)
   limma_fit$coefficients <- limma_fit$coefficients[,colnames(limma_fit$coefficients) %in% rownames(limma_contrasts)]
   limma_fitc <- limma::contrasts.fit(fit = limma_fit, contrasts = limma_contrasts)
   limma_fite <- limma::eBayes(limma_fitc, trend=TRUE)
@@ -131,7 +132,7 @@ limma_module <- function(count_data, anno_tb = NULL, tpm_tb = NULL, tag = NULL, 
                 dplyr::arrange(adj.P.Val)
     }
     ress_tb <- ress_tb %>% dplyr::rename("padj" = adj.P.Val)
-    readr::write_tsv(ress_tb, paste0(output_dir, "/", tag, ".res.", contrasts[f], ".limma.tsv"))
+    readr::write_tsv(ress_tb, paste0(output_dir, "/", tag, ".res.", gsub(" ", "", contrasts[f]), ".limma.tsv"))
   })
   names(limma_res_list) <- gsub(" ", "", contrasts)
   saveRDS(limma_res_list, file = paste0(output_dir, "/", tag, ".limma_res_list.rds"))

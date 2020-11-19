@@ -4,12 +4,10 @@
 \alias{venn_3}
 \title{Make venn diagram}
 \usage{
-venn_3(master_list, contrast, tag, output_dir, padj = 0.01)
+venn_3(master_list, tag, output_dir, padj = 0.01)
 }
 \arguments{
 \item{master_list}{list of 3 DE results}
-
-\item{contrast}{name of contrast to use for table (should be one of 'names(master_list[\link{x}])'')}
 
 \item{tag}{string used to prefix output}
 

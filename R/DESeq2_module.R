@@ -44,8 +44,9 @@ DESeq2_module <- function(count_data, anno_tb = NULL, tpm_tb = NULL, tag = NULL,
 
   if(is.null(output_dir)){
     print("No directory specified for output, the current dir will be used")
-    output_dir <- "."
+    output_dir <- "./DEseq2"
   } else {
+    output_dir <- paste0(output_dir, "/DEseq2")
     dir.create(output_dir, showWarnings = FALSE)
   }
 
@@ -62,11 +63,11 @@ DESeq2_module <- function(count_data, anno_tb = NULL, tpm_tb = NULL, tag = NULL,
   design_vec <- unlist(lapply(metadata_design, function(f){gsub(" ", "", strsplit(f, "\\+")[[1]])}))
 
   ##take only cols of interest and define major condition
-  cond_df <- cond_df[,colnames(cond_df) %in% design_vec]
+  cond_df <- cond_df[,colnames(cond_df) %in% c("sample", design_vec)]
   CONDITION <- rev(design_vec)[1]
 
   ##create factors
-  for(x in 1:length(design_vec)){
+  for(x in 1:length(colnames(cond_df))){
     cond_df[,x] <- factor(cond_df[,x])
   }
 

@@ -6,6 +6,7 @@
 \usage{
 brucemoran_rnaseq_kallisto_parser(
   metadata_csv,
+  data_dir = NULL,
   agg_col = "ensembl_gene_id",
   genome_prefix = "hsapiens",
   server_threads = NULL
@@ -15,11 +16,13 @@ brucemoran_rnaseq_kallisto_parser(
 \item{metadata_csv}{CSV format file with columns:
 'sample' that has exact dir matching which contains 'adundance.h5' (recursively)}
 
+\item{data_dir}{dir from which to recursively search for abundance.h5 for samples}
+
 \item{agg_col}{column on which to aggregate gene_mode}
 
 \item{genome_prefix}{string of a genome in biomart$dataset, suffixed with '_gene_ensembl'}
 
-\item{server}{set to anything but NULL to allow threading}
+\item{server_threads}{set to anything but NULL to allow threading}
 }
 \value{
 list object with sleuth object 'so' [\link{1}] and tx2gene annotation used to create it [\link{2}]

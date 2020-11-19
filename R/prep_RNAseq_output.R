@@ -65,11 +65,19 @@ brucemoran_rnaseq_kallisto_parser <- function(metadata_csv, data_dir = NULL, agg
   }
 
   ##parse in kallisto output to metadata
-  metadata <- get_metadata(metadata_csv, data_dir)
+  metadata <- RNAseqR::get_metadata(metadata_csv, data_dir)
 
   ##annotation to use
   print("Getting tx2gene object")
-  tx2gene <- get_tx2gene(genome_prefix)
+  tx2gene <- RNAseqR::get_tx2gene(genome_prefix)
+
+  if(genome_prefix != "hsapiens"){
+    tx2gene1 <- tx2gene
+    tx2gene <- tx2gene[,c(1,2,3)]
+    tx2gene <- dplyr::distinct(.data = tx2gene)
+  } else {
+    tx2gene1 <- tx2gene
+  }
 
   ##close open h5 files
   rhdf5::h5closeAll()
@@ -79,10 +87,10 @@ brucemoran_rnaseq_kallisto_parser <- function(metadata_csv, data_dir = NULL, agg
                             aggregation_column = agg_col,
                             num_cores = thread_alloc,
                             max_bootstrap = 50)
-  so <- so_obs_raw_out(so)
+  so <- RNAseqR::so_obs_raw_out(so)
   rhdf5::h5closeAll()
 
-  return(list(so, tx2gene))
+  return(list(so, tx2gene1))
 }
 
 #' Get annotation in tx2gene format; returns hsapiens_homolog when non-hsapiens input
@@ -193,17 +201,17 @@ so_obs_raw_out <- function(so, group_col = NULL, which_value = "est_counts"){
       else{
 
         #est_counts
-        so$obs_raw_count$wide <- tibble::as_tibble(obs_raw_widen(so, which_value = "est_counts", group_col))
+        so$obs_raw_count$wide <- tibble::as_tibble(RNAseqR::obs_raw_widen(so, which_value = "est_counts", group_col))
         so$obs_raw_count$long <- so$obs_raw_count$wide %>%
-                                 tidyr::pivot_longer(cols = dplyr::all_of(long_col),
+                                 tidyr::pivot_longer(cols = tidyselect::all_of(long_col),
                                                      names_to = "sample",
                                                      values_to = which_value) %>%
                                  dplyr::select(1,2,4,3)
 
         #tpm
-        so$obs_raw_tpm$wide <- tibble::as_tibble(obs_raw_widen(so, which_value = "tpm", group_col))
+        so$obs_raw_tpm$wide <- tibble::as_tibble(RNAseqR::obs_raw_widen(so, which_value = "tpm", group_col))
         so$obs_raw_tpm$long <- so$obs_raw_tpm$wide %>%
-                               tidyr::pivot_longer(cols = dplyr::all_of(long_col),
+                               tidyr::pivot_longer(cols = tidyselect::all_of(long_col),
                                                    names_to = "sample",
                                                    values_to = which_value) %>%
                                dplyr::select(1,2,4,3)

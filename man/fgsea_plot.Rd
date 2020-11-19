@@ -20,7 +20,9 @@ fgsea_plot(
 
 \item{sig_res}{output table from 'DESeq2/limma/edger_module()' or combination thereof (used for table output)}
 
-\item{msigdb_species}{one of msigdbr::msigdbr_species(), default:"Homo sapiens"}
+\item{msigdb_species}{one of msigdbr::msigdbr_show_species(), default:"Homo sapiens"}
+
+\item{msigdb_cat}{one of 'c("H", paste0("C", c(1:7)))', see: gsea-msigdb.org/gsea/msigdb/collections.jsp}
 
 \item{gene_col}{the name of the column in tibble with gene names found in pathways, set to "rownames" if they are the rownames (default)}
 
@@ -33,8 +35,6 @@ fgsea_plot(
 \item{rank_col}{colname used to rank data (based on t in limma)}
 
 \item{gene_set}{genes of interest for fgsea (subset to these, use all if not specified)}
-
-\item{msigdb_cats}{one of 'c("H", paste0("C", c(1:8)))', see: gsea-msigdb.org/gsea/msigdb/collections.jsp}
 }
 \value{
 msigdb_fgsea object

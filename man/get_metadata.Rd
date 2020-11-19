@@ -6,10 +6,12 @@
 main job is recursive dir() to find abundance.h5 files
 searches for dir with sampleID, then recursive-searches that for abundance.h5}
 \usage{
-get_metadata(metadata_csv)
+get_metadata(metadata_csv, data_dir)
 }
 \arguments{
 \item{metadata_csv}{CSV format file with sample and ontehr columns}
+
+\item{data_dir}{dir from which to recursively search for abundance.h5 for samples}
 }
 \description{
 Make metadata from CSV input, including generation of 'path' for abundance.h5 kallisto ouput

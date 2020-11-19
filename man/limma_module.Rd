@@ -13,7 +13,8 @@ limma_module(
   metadata_design = NULL,
   control_reference = NULL,
   output_dir = NULL,
-  delim_samples = "\\\\."
+  delim_samples = "\\\\.",
+  run_zoom = FALSE
 )
 }
 \arguments{

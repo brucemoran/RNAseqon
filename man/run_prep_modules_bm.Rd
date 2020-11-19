@@ -8,8 +8,13 @@ run_prep_modules_bm(
   metadata_csv,
   metadata_design,
   tag,
-  output_dir,
-  control_reference = NULL
+  output_dir = NULL,
+  data_dir = NULL,
+  control_reference = NULL,
+  genome_prefix = "hsapiens",
+  msigdb_species = "Homo sapiens",
+  msigdb_cat = "H",
+  server_threads = NULL
 )
 }
 \arguments{
@@ -21,7 +26,17 @@ run_prep_modules_bm(
 
 \item{output_dir}{path to where output goes}
 
+\item{data_dir}{path to where data recurse search begins}
+
 \item{control_reference}{string indicating the 'control' intgroup for last element of design}
+
+\item{genome_prefix}{string of a genome in biomart$dataset, suffixed with '_gene_ensembl'}
+
+\item{msigdb_species}{one of msigdbr::msigdbr_show_species(), default:"Homo sapiens"}
+
+\item{msigdb_cat}{one of 'c("H", paste0("C", c(1:7)))', see: gsea-msigdb.org/gsea/msigdb/collections.jsp}
+
+\item{server_threads}{set to anything but NULL to allow threading}
 }
 \value{
 none rds and tsv files printed

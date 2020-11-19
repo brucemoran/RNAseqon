@@ -117,9 +117,9 @@ venn_3 <- function(master_list, tag, output_dir, padj = 0.01){
 
   ##run over master_list to get number of overlapped genes
   print("Working on found-in-two")
-  fitwo <- suppressMessages(found_in_two(master_list))
+  fitwo <- suppressMessages(RNAseqR::found_in_two(master_list))
   print("Working on found-in-three")
-  fithree <- suppressMessages(found_in_three(master_list))
+  fithree <- suppressMessages(RNAseqR::found_in_three(master_list))
 
   ##each master_list for contrast
   unc <- unique(t(combn(x = c(0,0,0,1,1,1,0,0,0,1,1,1), m = 3)))
@@ -169,7 +169,7 @@ venn_3 <- function(master_list, tag, output_dir, padj = 0.01){
     vdf <- cbind(unc, unlist(lapply(compf_list, length)))
     colnames(vdf) <- c(names(master_list), "Counts")
     dir.create(paste0(output_dir, "/venn_3"), showWarnings = FALSE)
-    readr::write_csv(as.data.frame(vdf), file = paste0(output_dir, "/venns", tag, ".", contrast, ".venn_3.csv"))
+    readr::write_csv(as.data.frame(vdf), path = paste0(output_dir, "/venn_3/", tag, ".", contrast, ".venn_3.csv"))
 
     ##write venn
     trip_venn <- VennDiagram::draw.triple.venn(area1 = vdf[4,4],
@@ -183,7 +183,6 @@ venn_3 <- function(master_list, tag, output_dir, padj = 0.01){
                                            fill = c("dodgerblue", "orange", "forestgreen"),
                                            cat.cex = 2, cex = 2)
     pdf(paste0(output_dir, "/venn_3/", tag, ".", contrast, ".venn_3.pdf"))
-      grid::grid.newpage()
       title <- grid::textGrob(contrast,
                               x = 0.2, y = 0.01,
                               vjust = 0,

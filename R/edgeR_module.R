@@ -37,10 +37,13 @@ edgeR_module <- function(count_data, anno_tb = NULL, tpm_tb = NULL, tag = NULL, 
     stop("NBBB that all elements of the design must be names of columns in 'metadata' file")
   }
 
-  # if(is.null(control_reference)){
-  #   print("Please specify a control_reference from a column in metadata_csv for DESeq2")
-  #   print("NB that this should be one of the 'intgroup' levels")
-  # }
+  if(is.null(output_dir)){
+    print("No directory specified for output, the current dir will be used")
+    output_dir <- "./edgeR"
+  } else {
+    output_dir <- paste0(output_dir, "/edgeR")
+    dir.create(output_dir, showWarnings = FALSE)
+  }
 
   ##read in condition data
   cond <- readr::read_csv(metadata_csv)
@@ -53,16 +56,19 @@ edgeR_module <- function(count_data, anno_tb = NULL, tpm_tb = NULL, tag = NULL, 
 
   ##break design into components
   design_vec <- unlist(lapply(metadata_design, function(f){gsub(" ", "", strsplit(f, "\\+")[[1]])}))
+
+  ##take only cols of interest and define major condition
+  cond_df <- cond_df[,colnames(cond_df) %in% c("sample", design_vec)]
   CONDITION <- rev(design_vec)[1]
-  cond_df[,CONDITION] <- factor(cond_df[,CONDITION])
+
+  ##create factors
+  for(x in 1:length(colnames(cond_df))){
+    cond_df[,x] <- factor(cond_df[,x])
+  }
+
+  ##change reference level if specified
   if(!is.null(control_reference)){
     cond_df[,CONDITION] <- relevel(cond_df[,CONDITION], ref = control_reference)
-  }
-  if(length(design_vec) > 1){
-    for(x in 2:length(design_vec)){
-      print(x)
-      cond_df[,rev(design_vec)[x]] <- factor(cond_df[,rev(design_vec)[x]])
-    }
   }
 
   y <- edgeR::DGEList(counts = count_data,

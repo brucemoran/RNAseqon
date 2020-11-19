@@ -4,8 +4,8 @@
 #' @param sig_res output table from 'DESeq2/limma/edger_module()' or combination thereof (used for table output)
 #' @param rank_col colname used to rank data (based on t in limma)
 #' @param gene_set genes of interest for fgsea (subset to these, use all if not specified)
-#' @param msigdb_species one of msigdbr::msigdbr_species(), default:"Homo sapiens"
-#' @param msigdb_cats one of 'c("H", paste0("C", c(1:8)))', see: gsea-msigdb.org/gsea/msigdb/collections.jsp
+#' @param msigdb_species one of msigdbr::msigdbr_show_species(), default:"Homo sapiens"
+#' @param msigdb_cat one of 'c("H", paste0("C", c(1:7)))', see: gsea-msigdb.org/gsea/msigdb/collections.jsp
 #' @param gene_col the name of the column in tibble with gene names found in pathways, set to "rownames" if they are the rownames (default)
 #' @param padj the significance threshold
 #' @param output_dir path to where output goes
@@ -75,23 +75,24 @@ fgsea_plot <- function(res, sig_res=NULL, msigdb_species = "Homo sapiens", msigd
   fgsea_res_sig_tb <- dplyr::arrange(.data = fgsea_res_sig_tb, desc(NES))
 
   ##plotting
-  gg_fgsea <- ggplot2::ggplot(fgsea_res_sig_tb, aes(reorder(pathway, NES), NES)) +
-              ggplot2::geom_col(aes(fill = padj)) +
+  out_dir <- paste0(output_dir, "/fgsea")
+  dir.create(out_dir, showWarnings = FALSE)
+  gg_fgsea <- ggplot2::ggplot(fgsea_res_sig_tb, ggplot2::aes(reorder(pathway, NES), NES)) +
+              ggplot2::geom_col(ggplot2::aes(fill = padj)) +
               ggplot2::coord_flip() +
               ggplot2::labs(x = "Pathway",
                             y = "Normalized Enrichment Score",
                             title = paste0(msigdb_cat, "MsigDB pathways NES")) +
               ggplot2::theme_minimal()
-  ggplot2::ggsave(gg_fgsea, file = paste0(output_dir, "/", tag , ".fgsea_sig.ggplot2.pdf"))
+  ggplot2::ggsave(gg_fgsea, file = paste0(out_dir, "/", tag , ".fgsea_sig.ggplot2.pdf"))
 
   ##output results per gene
   pathways_res_tb <- msigdb_pathlist[names(msigdb_pathlist) %in% fgsea_res_sig_tb$pathway] %>%
                      tibble::enframe("pathway", gene_col) %>%
                      tidyr::unnest(cols = gene_col) %>%
                      dplyr::inner_join(sig_res, by = gene_col) %>%
-                     dplyr::filter(!!as.symbol(sig_col) < !!padj) %>%
-                     dplyr::mutate(across(is.numeric), round(2))
-  readr::write_tsv(pathways_res_tb, path = paste0(output_dir, "/", tag , ".fgsea_pathway.tsv"))
+                     dplyr::filter(!!as.symbol(sig_col) < !!padj)
+  readr::write_tsv(pathways_res_tb, path = paste0(out_dir, "/", tag , ".fgsea_pathway.tsv"))
 
 }
 
@@ -150,8 +151,8 @@ fgseamsViperIndiv <- function(mrs, mrsstat, pathway, qval, TAG, OUTDIR, gene_col
                                     dplyr::filter(padj < qval) %>%
                                     distinct()
 
-  ggplot(pathways_msig.DEsig.absFC2.plt, aes(reorder(pathway, NES), NES)) +
-    geom_col(aes(fill=padj<qval)) +
+  ggplot(pathways_msig.DEsig.absFC2.plt, ggplot2::aes(reorder(pathway, NES), NES)) +
+    geom_col(ggplot2::aes(fill=padj<qval)) +
     coord_flip() +
     labs(x="Pathway", y="Normalized Enrichment Score",
          title=paste0(TAG, " pathways NES from GSEA")) +
