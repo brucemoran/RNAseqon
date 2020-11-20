@@ -15,7 +15,7 @@
 #' @importFrom magrittr '%>%'
 #' @export
 
-limma_module <- function(count_data, anno_tb = NULL, tpm_tb = NULL, tag = NULL, metadata_csv = NULL, metadata_design = NULL, control_reference = NULL, output_dir = NULL, delim_samples = "\\.", run_zoom = FALSE){
+limma_module <- function(count_data, anno_tb = NULL, tpm_tb = NULL, tag = NULL, metadata_csv = NULL, metadata_design = NULL, control_reference = NULL, output_dir = NULL, delim_samples = "\\.", run_voom = FALSE){
 
   print("Running: limma_module()")
 

@@ -14,7 +14,7 @@ limma_module(
   control_reference = NULL,
   output_dir = NULL,
   delim_samples = "\\\\.",
-  run_zoom = FALSE
+  run_voom = FALSE
 )
 }
 \arguments{
