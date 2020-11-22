@@ -107,7 +107,7 @@ get_tx2gene <- function(genome_prefix){
   if(! paste0(genome_prefix, "_gene_ensembl") %in% datasets$dataset){
     stop(paste0("'genome_prefix = ", genome_prefix, "' was not available, please use one of: ", datasets$dataset))
   } else {
-    martm <- biomaRt::useMart(biomart = "ensembl", dataset = datasetm)
+    mart <- biomaRt::useMart(biomart = "ensembl", dataset = datasetm)
 
     ##in case non-human, get ortholog
     if(genome_prefix != "hsapiens"){
@@ -116,13 +116,13 @@ get_tx2gene <- function(genome_prefix){
                                              "external_gene_name",
                                              "hsapiens_homolog_ensembl_gene",
                                              "hsapiens_homolog_associated_gene_name"),
-                                   mart = martm,
+                                   mart = mart,
                                    useCache = FALSE))
     } else {
       tx2gene <- tibble::as_tibble(biomaRt::getBM(attributes=c("ensembl_transcript_id",
                                              "ensembl_gene_id",
                                              "external_gene_name"),
-                                mart = martm,
+                                mart = mart,
                                 useCache = FALSE))
     }
     colnames(tx2gene)[1] <- "target_id"
