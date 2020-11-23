@@ -30,7 +30,9 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
   }
 
   ##prepare data and save
-  sot <- brucemoran_rnaseq_kallisto_parser(metadata_csv, data_dir = data_dir, genome_prefix = genome_prefix)
+  sot <- brucemoran_rnaseq_kallisto_parser(metadata_csv,
+                                           data_dir = data_dir,
+                                           genome_prefix = genome_prefix)
 
   ##create required inputs to modules
   count_data <- so_to_raw_counts(sot[[1]])
@@ -83,6 +85,14 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
   ##fgsea
   ##run on DESeq2 output per contrast
   fgsea_list <- lapply(names(master_list[["DESeq2"]]), function(f){
-    fgsea_plot(res = master_list[["DESeq2"]][[f]], msigdb_species = msigdb_species, msigdb_cat = msigdb_cat, gene_col = NULL, padj = 0.01, output_dir = output_dir, tag = f)
+    fgsea_plot(res = master_list[["limma"]][[f]],
+               sig_res = fitwo_list[[f]][[1]],
+               sig_rank_col = NULL,
+               msigdb_species = msigdb_species,
+               msigdb_cat = msigdb_cat,
+               gene_col = NULL,
+               padj = 0.01,
+               output_dir = output_dir,
+               tag = f)
   })
 }
