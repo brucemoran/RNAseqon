@@ -26,7 +26,7 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
   ##create an output called RNAseqR in current dir if no output_dir defined
   if(is.null(output_dir)){
     output_dir <- paste0(getwd(), "/", tag, "/RNAseqR")
-    dir.create(output_dir, showWarnings = FALSE)
+    dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   }
 
   ##prepare data and save
@@ -39,7 +39,7 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
   tpm_tb <- tpm_tb <- sot[[1]]$obs_raw_tpm$wide
   anno_tb <- tibble::as_tibble(sot[[2]])
   outdir <- paste0(output_dir, "/inputs")
-  dir.create(outdir, showWarnings = FALSE)
+  dir.create(outdir, recursive = TRUE, showWarnings = FALSE)
   save(count_data, tpm_tb, anno_tb, file = paste0(outdir, "/", tag, ".count_tpm_anno.RData"))
 
   ##run modules
@@ -95,5 +95,5 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
   })
 
   save(master_list, fitwo_list, fithree, fgsea_list,
-       paste0(outdir, "/", tag, ".full_results.RData")
+       paste0(outdir, "/", tag, ".full_results.RData"))
 }

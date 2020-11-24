@@ -168,7 +168,7 @@ venn_3 <- function(master_list, tag, output_dir, padj = 0.01){
     ##compare those lists
     vdf <- cbind(unc, unlist(lapply(compf_list, length)))
     colnames(vdf) <- c(names(master_list), "Counts")
-    dir.create(paste0(output_dir, "/venn_3"), showWarnings = FALSE)
+    dir.create(paste0(output_dir, "/venn_3"), recursive = TRUE, showWarnings = FALSE)
     readr::write_csv(as.data.frame(vdf), path = paste0(output_dir, "/venn_3/", tag, ".", contrast, ".venn_3.csv"))
 
     ##write venn

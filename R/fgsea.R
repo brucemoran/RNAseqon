@@ -97,7 +97,7 @@ fgsea_plot <- function(res, sig_res = NULL, msigdb_species = "Homo sapiens", msi
 
   ##plotting
   out_dir <- paste0(output_dir, "/fgsea")
-  dir.create(out_dir, showWarnings = FALSE)
+  dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
   gg_fgsea <- ggplot2::ggplot(fgsea_res_sig_tb, ggplot2::aes(reorder(pathway, NES), NES)) +
               ggplot2::geom_col(ggplot2::aes(fill = padj)) +
               ggplot2::coord_flip() +

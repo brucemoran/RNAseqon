@@ -69,7 +69,7 @@ brucemoran_rnaseq_kallisto_parser <- function(metadata_csv, data_dir = NULL, agg
 
   ##annotation to use
   print("Getting tx2gene object")
-  tx2gene <- get_tx2gen(genome_prefix)
+  tx2gene <- RNAseqR::get_tx2gene(genome_prefix)
 
   if(genome_prefix != "hsapiens"){
     tx2gene1 <- tx2gene
@@ -99,7 +99,7 @@ brucemoran_rnaseq_kallisto_parser <- function(metadata_csv, data_dir = NULL, agg
 #' @return tx2gene format for sleuth_prep() in get_abundance_tsv()
 #' @export
 
-get_tx2gen <- function(genome_prefix){
+get_tx2gene <- function(genome_prefix){
 
   datasets <- biomaRt::listDatasets(biomaRt::useMart("ensembl"))
   datasetm <- paste0(genome_prefix, "_gene_ensembl")

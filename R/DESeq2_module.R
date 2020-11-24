@@ -47,7 +47,7 @@ DESeq2_module <- function(count_data, anno_tb = NULL, tpm_tb = NULL, tag = NULL,
     output_dir <- "./DEseq2"
   } else {
     output_dir <- paste0(output_dir, "/DEseq2")
-    dir.create(output_dir, showWarnings = FALSE)
+    dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   }
 
   ##read in condition data
