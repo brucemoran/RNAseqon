@@ -10,7 +10,7 @@ fgsea_plot(
   msigdb_species = "Homo sapiens",
   msigdb_cat = "H",
   gene_col = NULL,
-  sig_rank_col = NULL,
+  rank_col = NULL,
   padj = 0.01,
   output_dir,
   tag
@@ -27,7 +27,7 @@ fgsea_plot(
 
 \item{gene_col}{the name of the column in tibble with gene names found in pathways, set to "rownames" if they are the rownames (default)}
 
-\item{sig_rank_col}{the name of the column in tibble which ranks genes for fgsea (default: "stat" for DESeq2 results; limma - use "t", edgeR - unsure)}
+\item{rank_col}{the name of the column in tibble which ranks genes for fgsea (default: "stat" for DESeq2 results; limma - use "t", edgeR - unsure)}
 
 \item{padj}{the significance threshold}
 

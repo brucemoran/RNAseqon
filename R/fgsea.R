@@ -6,14 +6,14 @@
 #' @param msigdb_species one of msigdbr::msigdbr_show_species(), default:"Homo sapiens"
 #' @param msigdb_cat one of 'c("H", paste0("C", c(1:7)))', see: gsea-msigdb.org/gsea/msigdb/collections.jsp
 #' @param gene_col the name of the column in tibble with gene names found in pathways, set to "rownames" if they are the rownames (default)
-#' @param sig_rank_col the name of the column in tibble which ranks genes for fgsea (default: "stat" for DESeq2 results; limma - use "t", edgeR - unsure)
+#' @param rank_col the name of the column in tibble which ranks genes for fgsea (default: "stat" for DESeq2 results; limma - use "t", edgeR - unsure)
 #' @param padj the significance threshold
 #' @param output_dir path to where output goes
 #' @param tag string used to prefix output
 #' @return msigdb_fgsea object
 #' @export
 
-fgsea_plot <- function(res, sig_res = NULL, msigdb_species = "Homo sapiens", msigdb_cat = "H", gene_col = NULL, sig_rank_col = NULL, padj = 0.01, output_dir, tag) {
+fgsea_plot <- function(res, sig_res = NULL, msigdb_species = "Homo sapiens", msigdb_cat = "H", gene_col = NULL, rank_col = NULL, padj = 0.01, output_dir, tag) {
 
   print("Running: fgsea_plot()")
 
@@ -40,36 +40,36 @@ fgsea_plot <- function(res, sig_res = NULL, msigdb_species = "Homo sapiens", msi
     sig_col <- "padj"
   }
 
-  ##this to guess at correct sig_rank_col if NULL
+  ##this to guess at correct rank_col if NULL
   ##NB can't use edgeR, so stop and return warning if matches only edgeR
-  if(is.null(sig_rank_col)){
+  if(is.null(rank_col)){
     if(length(grep("AveExpr", colnames(sig_res))) > 0){
       if(!"t" %in% colnames(sig_res)){
-        sig_rank_col <- "limma_t"
+        rank_col <- "limma_t"
       } else {
-        sig_rank_col <- "t"
+        rank_col <- "t"
       }
     } else {
       if(length(grep("stat", colnames(sig_res))) > 0){
         if(!"stat" %in% colnames(sig_res)){
-          sig_rank_col <- "DESeq2_stat"
+          rank_col <- "DESeq2_stat"
         } else {
-          sig_rank_col <- "stat"
+          rank_col <- "stat"
         }
       } else {
-        stop("Couldn't find limma or DESeq2 colnames, is this edgeR result data? IF so please use a different source, or specify 'sig_rank_col' paramater input")
+        stop("Couldn't find limma or DESeq2 colnames, is this edgeR result data? IF so please use a different source, or specify 'rank_col' paramater input")
       }
     }
   }
-  print(paste0("Found sig_rank_col: ", sig_rank_col))
+  print(paste0("Found rank_col: ", rank_col))
 
-  ##select/arrange by sig_rank_col
+  ##select/arrange by rank_col
   ##from https://stephenturner.github.io/deseq-to-fgsea/ (thanks!)
-  res_rank <- dplyr::select(.data = sig_res, !!gene_col, !!sig_rank_col) %>%
+  res_rank <- dplyr::select(.data = sig_res, !!gene_col, !!rank_col) %>%
               na.omit() %>%
               dplyr::distinct() %>%
               dplyr::group_by(!!as.symbol(gene_col)) %>%
-              dplyr::summarize(rank = mean(!!as.symbol(sig_rank_col)))
+              dplyr::summarize(rank = mean(!!as.symbol(rank_col)))
   rank_vec <- tibble::deframe(res_rank)
 
   ##MsigDB pathways

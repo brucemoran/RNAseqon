@@ -85,7 +85,8 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
   ##fgsea
   ##run on DESeq2 output per contrast
   fgsea_list <- lapply(names(master_list[["limma"]]), function(f){
-    fgsea_plot(res = fithree,
+    fgsea_plot(res = master_list[["limma"]][[f]],
+               sig_res = fithree[[f]],
                msigdb_species = msigdb_species,
                msigdb_cat = msigdb_cat,
                gene_col = NULL,
