@@ -182,7 +182,7 @@ found_in_three <- function(master_list, padj = 0.01){
     f2 <- paste0(f[2], "_padj")
     f3 <- paste0(f[3], "_padj")
 
-    mlj <- dplyr::left_join(ml1[[f[1]]][[nm]], ml1[[f[2]]][[nm]])
+    mlj <- base::suppressMessages(dplyr::left_join(ml1[[f[1]]][[nm]], ml1[[f[2]]][[nm]]))
     base::suppressMessages(dplyr::left_join(mlj, ml1[[f[3]]][[nm]])) %>%
     dplyr::filter(!!as.symbol(f1) < !!padj & !!as.symbol(f2) < !!padj & !!as.symbol(f3) < !!padj)
 
@@ -235,8 +235,7 @@ venn_3 <- function(master_list, tag, output_dir, padj = 0.01){
         }
       } else if(length(compf) == 2){
         ##aready padjusted
-        fitwo_contrast <- fitwo[[contrast]]
-        dat <- fitwo_contrast[[paste(compf, collapse = "-")]]
+        dat <- fitwo[[paste(compf, collapse = "-")]][[contrast]]
         if(dim(dat)[1] == 0){
           return()
         } else {
@@ -244,8 +243,7 @@ venn_3 <- function(master_list, tag, output_dir, padj = 0.01){
           as.vector(unlist(dat1))
         }
       } else {
-        fithree_contrast <- fithree[[contrast]]
-        dat <- fithree_contrast
+        dat <- fithree[[contrast]]
         if(dim(dat)[1] == 0){
           return()
         } else {

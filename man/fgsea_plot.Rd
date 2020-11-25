@@ -13,7 +13,8 @@ fgsea_plot(
   rank_col = NULL,
   padj = 0.01,
   output_dir,
-  tag
+  tag,
+  contrast
 )
 }
 \arguments{
@@ -34,6 +35,8 @@ fgsea_plot(
 \item{output_dir}{path to where output goes}
 
 \item{tag}{string used to prefix output}
+
+\item{contrast}{string to define the contrast being made, tags output}
 
 \item{gene_set}{genes of interest for fgsea (subset to these, use all if not specified)}
 }
