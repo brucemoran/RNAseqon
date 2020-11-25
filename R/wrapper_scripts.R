@@ -38,7 +38,7 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
   count_data <- so_to_raw_counts(sot[[1]])
   tpm_tb <- tpm_tb <- sot[[1]]$obs_raw_tpm$wide
   anno_tb <- tibble::as_tibble(sot[[2]])
-  outdir <- paste0(output_dir, "/inputs")
+  outdir <- paste0(output_dir, "/RData")
   dir.create(outdir, recursive = TRUE, showWarnings = FALSE)
   save(count_data, tpm_tb, anno_tb, file = paste0(outdir, "/", tag, ".count_tpm_anno.RData"))
 
@@ -73,7 +73,7 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
                 run_voom = TRUE)
 
   ##create master list from module RDS files
-  master_list <- master_parse_join(output_dir)
+  master_list <- master_parse_join(input_dir = output_dir)
 
   ##find overlaps
   fitwo_list <- found_in_two(master_list)
@@ -85,16 +85,17 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
   ##fgsea
   ##run on DESeq2 output per contrast
   fgsea_list <- lapply(names(master_list[["limma"]]), function(f){
-    fgsea_plot(res = master_list[["limma"]][[f]],
-               sig_res = fithree[[f]],
-               msigdb_species = msigdb_species,
-               msigdb_cat = msigdb_cat,
-               gene_col = NULL,
-               padj = 0.01,
-               output_dir = output_dir,
-               tag = f)
+    RNAseqR::fgsea_plot(res = master_list[["limma"]][[f]],
+                       sig_res = fithree[[f]],
+                       msigdb_species = msigdb_species,
+                       msigdb_cat = msigdb_cat,
+                       gene_col = NULL,
+                       padj = 0.01,
+                       output_dir = output_dir,
+                       tag = f)
   })
-
+  names(fgsea_list) <- names(master_list[["limma"]])
+  fgsea_master <- do.call(rbind, fgsea_list)
   save(master_list, fitwo_list, fithree, fgsea_list,
-       paste0(outdir, "/", tag, ".full_results.RData"))
+       file = paste0(outdir, "/", tag, ".full_results.RData"))
 }

@@ -17,6 +17,12 @@ fgsea_plot <- function(res, sig_res = NULL, msigdb_species = "Homo sapiens", msi
 
   print("Running: fgsea_plot()")
 
+  ##output dir
+  out_dir <- paste0(output_dir, "/fgsea")
+  dir.create(paste0(out_dir, "/plots"), recursive = TRUE, showWarnings = FALSE)
+  dir.create(paste0(out_dir, "/de_pathways"), recursive = TRUE, showWarnings = FALSE)
+  dir.create(paste0(out_dir, "/all"), recursive = TRUE, showWarnings = FALSE)
+
   ##use res as significant set also
   if(is.null(sig_res)){
       sig_res <- res
@@ -43,15 +49,15 @@ fgsea_plot <- function(res, sig_res = NULL, msigdb_species = "Homo sapiens", msi
   ##this to guess at correct rank_col if NULL
   ##NB can't use edgeR, so stop and return warning if matches only edgeR
   if(is.null(rank_col)){
-    if(length(grep("AveExpr", colnames(sig_res))) > 0){
-      if(!"t" %in% colnames(sig_res)){
+    if(length(grep("AveExpr", colnames(res))) > 0){
+      if(!"t" %in% colnames(res)){
         rank_col <- "limma_t"
       } else {
         rank_col <- "t"
       }
     } else {
-      if(length(grep("stat", colnames(sig_res))) > 0){
-        if(!"stat" %in% colnames(sig_res)){
+      if(length(grep("stat", colnames(res))) > 0){
+        if(!"stat" %in% colnames(res)){
           rank_col <- "DESeq2_stat"
         } else {
           rank_col <- "stat"
@@ -65,7 +71,7 @@ fgsea_plot <- function(res, sig_res = NULL, msigdb_species = "Homo sapiens", msi
 
   ##select/arrange by rank_col
   ##from https://stephenturner.github.io/deseq-to-fgsea/ (thanks!)
-  res_rank <- dplyr::select(.data = sig_res, !!gene_col, !!rank_col) %>%
+  res_rank <- dplyr::select(.data = res, !!gene_col, !!rank_col) %>%
               na.omit() %>%
               dplyr::distinct() %>%
               dplyr::group_by(!!as.symbol(gene_col)) %>%
@@ -90,14 +96,12 @@ fgsea_plot <- function(res, sig_res = NULL, msigdb_species = "Homo sapiens", msi
   ##make tibble and add FDR, filters
   fgsea_res_tb <- dplyr::mutate(.data = tibble::as_tibble(fgsea_res))
   fgsea_res_tb <- dplyr::select(.data = fgsea_res_tb, -leadingEdge)
-  readr::write_tsv(fgsea_res_tb, path = paste0(output_dir, "/", tag , ".fgsea.tsv"))
+  readr::write_tsv(fgsea_res_tb, file = paste0(out_dir, "/all/", tag , ".fgsea_all.tsv"))
 
   fgsea_res_sig_tb <- dplyr::filter(.data = fgsea_res_tb, padj < !!padj)
   fgsea_res_sig_tb <- dplyr::arrange(.data = fgsea_res_sig_tb, desc(NES))
 
   ##plotting
-  out_dir <- paste0(output_dir, "/fgsea")
-  dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
   gg_fgsea <- ggplot2::ggplot(fgsea_res_sig_tb, ggplot2::aes(reorder(pathway, NES), NES)) +
               ggplot2::geom_col(ggplot2::aes(fill = padj)) +
               ggplot2::coord_flip() +
@@ -105,16 +109,17 @@ fgsea_plot <- function(res, sig_res = NULL, msigdb_species = "Homo sapiens", msi
                             y = "Normalized Enrichment Score",
                             title = paste0(msigdb_cat, "MsigDB pathways NES")) +
               ggplot2::theme_minimal()
-  ggplot2::ggsave(gg_fgsea, file = paste0(out_dir, "/", tag , ".fgsea_sig.ggplot2.pdf"))
+  ggplot2::ggsave(gg_fgsea, file = paste0(out_dir, "/plots/", tag , ".fgsea_sig.ggplot2.pdf"))
 
   ##output results per gene
-  pathways_res_tb <- msigdb_pathlist[names(msigdb_pathlist) %in% fgsea_res_sig_tb$pathway] %>%
-                     tibble::enframe("pathway", gene_col) %>%
+  pathways_sig_res_tb <- msigdb_pathlist[names(msigdb_pathlist) %in% fgsea_res_sig_tb$pathway] %>%
+                     tibble::enframe("pathway", dplyr::all_of(gene_col)) %>%
                      tidyr::unnest(cols = gene_col) %>%
                      dplyr::inner_join(sig_res, by = gene_col) %>%
-                     dplyr::filter(!!as.symbol(sig_col) < !!padj)
-  readr::write_tsv(pathways_res_tb, path = paste0(out_dir, "/", tag , ".fgsea_pathway.tsv"))
-
+                     dplyr::filter(!!as.symbol(sig_col) < !!padj) %>%
+                     dplyr::distinct()
+  readr::write_tsv(pathways_sig_res_tb, file = paste0(out_dir, "/de_pathways/", tag , ".fgsea_pathway.tsv"))
+  return(pathways_sig_res_tb)
 }
 
 ##run fgsea on each MR set individually, returning list same length as MRs, table of FGSEA

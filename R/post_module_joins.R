@@ -21,7 +21,94 @@ master_parse_join <- function(input_dir){
     readRDS(f)
   })
   names(master_list) <- master_names
-  return(master_list)
+
+  ##check if multiple annotations arise and fix by aggregating if so
+  ##esp for homology tables (i.e. where !genome_prefix == hsapiens)
+  master_list_a <- lapply(master_list, function(ff){
+    mlist <- lapply(ff, function(f){
+      extg <- f$external_gene_name
+      ensg <- f$ensembl_gene_id
+      if(length(table(extg[table(extg)>1])) > 1 | length(table(ensg[table(ensg)>1])) > 1){
+        print("Found multiple annotations for identifiers, aggregating results")
+
+        colns <- grep("_gene", colnames(f), value = TRUE)
+
+        if(length(colns) == 4){
+          ##have 4 cols, first 2 to group_by, second 2 to aggregate
+          f <- group_agg_multi(f, colns)
+        }
+
+        ##then aggregate ENS IDs so only single external_gene_name is found
+        group_agg_two(f, colns)
+      } else {
+        return(f)
+      }
+    })
+    return(mlist)
+  })
+  return(master_list_a)
+}
+
+#' Aggregate 3, 4 columns based on grouping on 1, 2 columns
+#' NB that table can have multiple annotations in RNAseqR based on contrasts
+#' this function removes the 'per-caller'
+#'
+#' @param f table object with colnames specified in colns
+#' @param colns colnames of f on which to aggregate
+#' @param pattern string to grep for colnames on which to operate
+#' @return list object of 'found-in-2' and 'all-3' results, including unique cols from each module
+#' @importFrom magrittr '%>%'
+#' @export
+
+group_agg_multi <- function(f, colns = NULL, pattern = NULL){
+
+  if(is.null(colns) && is.null(pattern)){
+    stop("Please specify one of 'colns' or 'patterns'")
+  }
+
+  if(is.null(colns)){
+    colns <- grep(pattern, colnames(f), value = TRUE)
+  }
+
+  f %>% dplyr:::rowwise() %>%
+         dplyr::group_by(!!as.symbol(colns[1]), !!as.symbol(colns[2])) %>%
+         dplyr::mutate("agg_col3" = paste0(!!as.symbol(colns[3]), collapse=",")) %>%
+         dplyr::mutate("agg_col4" = paste0(!!as.symbol(colns[4]), collapse=",")) %>%
+         dplyr::ungroup() %>%
+         dplyr::select(-!!colns[3], -!!colns[4]) %>%
+         dplyr::rename(!!colns[3] := agg_col3, !!colns[4] := agg_col4) %>%
+         dplyr::select(tidyselect::all_of(colns), dplyr::everything()) %>%
+         dplyr::distinct(ensembl_gene_id, .keep_all = TRUE)
+
+}
+
+#' Aggregate 1 columns based on grouping on 2 column
+#'
+#' @param f table object with colnames specified in colns
+#' @param colns colnames of f on which to aggregate
+#' @param pattern string to grep for colnames on which to operate
+#' @return list object of 'found-in-2' and 'all-3' results, including unique cols from each module
+#' @importFrom magrittr '%>%'
+#' @export
+
+group_agg_two <- function(f, colns = NULL, pattern = NULL){
+
+  if(is.null(colns) && is.null(pattern)){
+    stop("Please specify one of 'colns' or 'patterns'")
+  }
+
+  if(is.null(colns)){
+    colns <- grep(pattern, colnames(f), value = TRUE)
+  }
+
+  f %>% dplyr:::rowwise() %>%
+        dplyr::group_by(!!as.symbol(colns[2])) %>%
+        dplyr::mutate("agg_col1" = paste0(!!as.symbol(colns[1]), collapse=",")) %>%
+        dplyr::ungroup() %>%
+        dplyr::select(-!!colns[1]) %>%
+        dplyr::rename(!!colns[1] := agg_col1) %>%
+        dplyr::select(tidyselect::all_of(colns), dplyr::everything()) %>%
+        dplyr::distinct(ensembl_gene_id, .keep_all = TRUE)
 }
 
 #' Found-in-2
@@ -36,16 +123,19 @@ found_in_two <- function(master_list, padj = 0.01){
 
   ##pairwise joins
   ##operate over multiple contrasts
-  per_contrast_list <- lapply(names(master_list[[1]]), function(nm){
-    fitwo_list <- apply(t(combn(m = 2, names(master_list))), 1, function(f){
+  combns <- apply(t(combn(m = 2, names(master_list))), 1, function(f){
+    paste(f, collapse = "-")
+  })
+  fitwo_list <- apply(t(combn(m = 2, names(master_list))), 1, function(f){
+    per_contrast_list <- lapply(names(master_list[[1]]), function(nm){
 
       ml1 <- master_list
 
       ##rename colnames with method ID
       cn1 <- colnames(ml1[[f[1]]][[nm]])
       cn2 <- colnames(ml1[[f[2]]][[nm]])
-      cn1i <- grep("_gene_", grep("tpm", cn1, invert = TRUE, value = TRUE), invert = TRUE)
-      cn2i <- grep("_gene_", grep("tpm", cn2, invert = TRUE, value = TRUE), invert = TRUE)
+      cn1i <- grep("_gene", grep("tpm", cn1, invert = TRUE, value = TRUE), invert = TRUE)
+      cn2i <- grep("_gene", grep("tpm", cn2, invert = TRUE, value = TRUE), invert = TRUE)
       colnames(ml1[[f[1]]][[nm]])[cn1i] <- paste0(f[1], "_", cn1[cn1i])
       colnames(ml1[[f[2]]][[nm]])[cn2i] <- paste0(f[2], "_", cn2[cn2i])
       f1 <- paste0(f[1], "_padj")
@@ -57,10 +147,11 @@ found_in_two <- function(master_list, padj = 0.01){
     names(fitwo_list) <- apply(t(combn(m=2, names(master_list))), 1, function(f){
       paste(f, collapse="-")
     })
-    return(fitwo_list)
+    names(per_contrast_list) <- names(master_list[[1]])
+    return(per_contrast_list)
   })
-  names(per_contrast_list) <- names(master_list[[1]])
-  return(per_contrast_list)
+  names(fitwo_list) <- combns
+  return(fitwo_list)
 }
 
 #' Found-in-3
@@ -82,9 +173,9 @@ found_in_three <- function(master_list, padj = 0.01){
     cn1 <- colnames(ml1[[f[1]]][[nm]])
     cn2 <- colnames(ml1[[f[2]]][[nm]])
     cn3 <- colnames(ml1[[f[3]]][[nm]])
-    cn1i <- grep("_gene_", grep("tpm", cn1, invert = TRUE, value = TRUE), invert = TRUE)
-    cn2i <- grep("_gene_", grep("tpm", cn2, invert = TRUE, value = TRUE), invert = TRUE)
-    cn3i <- grep("_gene_", grep("tpm", cn3, invert = TRUE, value = TRUE), invert = TRUE)
+    cn1i <- grep("_gene", grep("tpm", cn1, invert = TRUE, value = TRUE), invert = TRUE)
+    cn2i <- grep("_gene", grep("tpm", cn2, invert = TRUE, value = TRUE), invert = TRUE)
+    cn3i <- grep("_gene", grep("tpm", cn3, invert = TRUE, value = TRUE), invert = TRUE)
     colnames(ml1[[f[1]]][[nm]])[cn1i] <- paste0(f[1], "_", cn1[cn1i])
     colnames(ml1[[f[2]]][[nm]])[cn2i] <- paste0(f[2], "_", cn2[cn2i])
     colnames(ml1[[f[3]]][[nm]])[cn3i] <- paste0(f[3], "_", cn3[cn3i])
@@ -169,7 +260,7 @@ venn_3 <- function(master_list, tag, output_dir, padj = 0.01){
     vdf <- cbind(unc, unlist(lapply(compf_list, length)))
     colnames(vdf) <- c(names(master_list), "Counts")
     dir.create(paste0(output_dir, "/venn_3"), recursive = TRUE, showWarnings = FALSE)
-    readr::write_csv(as.data.frame(vdf), path = paste0(output_dir, "/venn_3/", tag, ".", contrast, ".venn_3.csv"))
+    readr::write_csv(as.data.frame(vdf), file = paste0(output_dir, "/venn_3/", tag, ".", contrast, ".venn_3.csv"))
 
     ##write venn
     trip_venn <- VennDiagram::draw.triple.venn(area1 = vdf[4,4],
