@@ -128,7 +128,7 @@ found_in_two <- function(master_list, padj = 0.01){
   })
   fitwo_list <- apply(t(combn(m = 2, names(master_list))), 1, function(f){
     per_contrast_list <- lapply(names(master_list[[1]]), function(nm){
-
+      print(paste0("Working on found-in-two, contrast: ", nm))
       ml1 <- master_list
 
       ##rename colnames with method ID
@@ -141,12 +141,10 @@ found_in_two <- function(master_list, padj = 0.01){
       f1 <- paste0(f[1], "_padj")
       f2 <- paste0(f[2], "_padj")
 
-      dplyr::left_join(ml1[[f[1]]][[nm]], ml1[[f[2]]][[nm]]) %>%
+      base::suppressMessages(dplyr::left_join(ml1[[f[1]]][[nm]], ml1[[f[2]]][[nm]])) %>%
       dplyr::filter(!!as.symbol(f1) < !!padj & !!as.symbol(f2) < !!padj)
     })
-    names(fitwo_list) <- apply(t(combn(m=2, names(master_list))), 1, function(f){
-      paste(f, collapse="-")
-    })
+
     names(per_contrast_list) <- names(master_list[[1]])
     return(per_contrast_list)
   })
@@ -168,6 +166,7 @@ found_in_three <- function(master_list, padj = 0.01){
   per_contrast_list <- lapply(names(master_list[[1]]), function(nm){
     ml1 <- master_list
     f <- names(ml1)
+    print(paste0("Working on found-in-three, contrast: ", nm))
 
     ##rename colnames with method ID
     cn1 <- colnames(ml1[[f[1]]][[nm]])
@@ -184,7 +183,7 @@ found_in_three <- function(master_list, padj = 0.01){
     f3 <- paste0(f[3], "_padj")
 
     mlj <- dplyr::left_join(ml1[[f[1]]][[nm]], ml1[[f[2]]][[nm]])
-    dplyr::left_join(mlj, ml1[[f[3]]][[nm]]) %>%
+    base::suppressMessages(dplyr::left_join(mlj, ml1[[f[3]]][[nm]])) %>%
     dplyr::filter(!!as.symbol(f1) < !!padj & !!as.symbol(f2) < !!padj & !!as.symbol(f3) < !!padj)
 
   })

@@ -84,7 +84,7 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
 
   ##fgsea
   ##run on DESeq2 output per contrast
-  fgsea_list <- lapply(names(master_list[["limma"]]), function(f){
+  fgsea_list_limma_rank_fithree <- lapply(names(master_list[["limma"]]), function(f){
     RNAseqR::fgsea_plot(res = master_list[["limma"]][[f]],
                        sig_res = fithree[[f]],
                        msigdb_species = msigdb_species,
@@ -94,8 +94,22 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
                        output_dir = output_dir,
                        tag = f)
   })
-  names(fgsea_list) <- names(master_list[["limma"]])
-  fgsea_master <- do.call(rbind, fgsea_list)
-  save(master_list, fitwo_list, fithree, fgsea_list,
+  fgsea_list_deseq2_stat_fithree <- lapply(names(master_list[["DESeq2"]]), function(f){
+    RNAseqR::fgsea_plot(res = master_list[["DESeq2"]][[f]],
+                       sig_res = fithree[[f]],
+                       msigdb_species = msigdb_species,
+                       msigdb_cat = msigdb_cat,
+                       gene_col = NULL,
+                       padj = 0.01,
+                       output_dir = output_dir,
+                       tag = f)
+  })
+  names(fgsea_list_limma_rank_fithree) <- names(fgsea_list_deseq2_stat_fithree)<- names(master_list[["limma"]])
+  fgsea_list_limma_rank_fithree_master <- do.call(rbind, fgsea_list_limma_rank_fithree)
+  fgsea_list_deseq2_stat_fithree_master <- do.call(rbind, fgsea_list_deseq2_stat_fithree)
+
+  save(master_list, fitwo_list, fithree,
+       fgsea_list_limma_rank_fithree_master,
+       fgsea_list_deseq2_stat_fithree_master,
        file = paste0(outdir, "/", tag, ".full_results.RData"))
 }
