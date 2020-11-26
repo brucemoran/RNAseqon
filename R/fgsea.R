@@ -10,10 +10,11 @@
 #' @param padj the significance threshold
 #' @param output_dir path to where output goes
 #' @param tag string used to prefix output
+#' @param contrast string to define the contrast being made, tags output
 #' @return msigdb_fgsea object
 #' @export
 
-fgsea_plot <- function(res, sig_res = NULL, msigdb_species = "Homo sapiens", msigdb_cat = "H", gene_col = NULL, rank_col = NULL, padj = 0.01, output_dir, tag) {
+fgsea_plot <- function(res, sig_res = NULL, msigdb_species = "Homo sapiens", msigdb_cat = "H", gene_col = NULL, rank_col = NULL, padj = 0.01, output_dir, tag, contrast) {
 
   print("Running: fgsea_plot()")
 
@@ -117,9 +118,10 @@ fgsea_plot <- function(res, sig_res = NULL, msigdb_species = "Homo sapiens", msi
                      tidyr::unnest(cols = gene_col) %>%
                      dplyr::inner_join(sig_res, by = gene_col) %>%
                      dplyr::filter(!!as.symbol(sig_col) < !!padj) %>%
-                     dplyr::distinct()
-  readr::write_tsv(pathways_res_tb, file = paste0(out_dir, "/de_pathways/", tag , ".fgsea_pathway.tsv"))
-  return(pathways_res_tb)
+                     dplyr::distinct() %>%
+                     dplyr::mutate(contrast = !!contrast)
+  readr::write_tsv(pathways_sig_res_tb, file = paste0(out_dir, "/de_pathways/", tag , ".fgsea_pathway.tsv"))
+  return(pathways_sig_res_tb)
 }
 
 #' Function to take output table from multiple contrasts
