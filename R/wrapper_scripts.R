@@ -30,7 +30,7 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
   }
 
   ##prepare data and save
-  sot <- brucemoran_rnaseq_kallisto_parser(metadata_csv,
+  sot <- RNAseqR::brucemoran_rnaseq_kallisto_parser(metadata_csv,
                                            data_dir = data_dir,
                                            genome_prefix = genome_prefix)
 
@@ -43,7 +43,7 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
   save(count_data, tpm_tb, anno_tb, file = paste0(outdir, "/", tag, ".count_tpm_anno.RData"))
 
   ##run modules
-  DESeq2_module(count_data = count_data,
+  RNAseqR::DESeq2_module(count_data = count_data,
                 anno_tb = anno_tb,
                 tpm_tb = tpm_tb,
                 tag = tag,
@@ -52,7 +52,7 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
                 output_dir = output_dir,
                 control_reference = control_reference,
                 delim_samples = "\\.")
-  edgeR_module(count_data = count_data,
+  RNAseqR::edgeR_module(count_data = count_data,
                 anno_tb = anno_tb,
                 tpm_tb = tpm_tb,
                 tag = tag,
@@ -61,7 +61,7 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
                 output_dir = output_dir,
                 control_reference = control_reference,
                 delim_samples = "\\.")
-  limma_module(count_data = count_data,
+  RNAseqR::limma_module(count_data = count_data,
                 anno_tb = anno_tb,
                 tpm_tb = tpm_tb,
                 tag = tag,
@@ -73,14 +73,16 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
                 run_voom = TRUE)
 
   ##create master list from module RDS files
-  master_list <- master_parse_join(input_dir = output_dir)
+  master_list <- RNAseqR::master_parse_join(input_dir = output_dir)
 
   ##find overlaps
-  fitwo_list <- found_in_two(master_list)
-  fithree <- found_in_three(master_list)
+  fitwo <- RNAseqR::found_in_two(master_list)
+  fithree <- RNAseqR::found_in_three(master_list)
 
   ##Venn results WIP
-  venn_3(master_list = master_list, tag = tag, output_dir = output_dir)
+  RNAseqR::venn_3(master_list = master_list,
+                  tag = tag,
+                  output_dir = output_dir)
 
   ##fgsea
   ##run on DESeq2 output per contrast
@@ -92,7 +94,8 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
                        gene_col = NULL,
                        padj = 0.01,
                        output_dir = output_dir,
-                       tag = f)
+                       tag = f,
+                       contrast = f)
   })
   fgsea_list_deseq2_stat_fithree <- lapply(names(master_list[["DESeq2"]]), function(f){
     RNAseqR::fgsea_plot(res = master_list[["DESeq2"]][[f]],
@@ -102,14 +105,18 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
                        gene_col = NULL,
                        padj = 0.01,
                        output_dir = output_dir,
-                       tag = f)
+                       tag = f,
+                       contrast = f)
   })
   names(fgsea_list_limma_rank_fithree) <- names(fgsea_list_deseq2_stat_fithree)<- names(master_list[["limma"]])
   fgsea_list_limma_rank_fithree_master <- do.call(rbind, fgsea_list_limma_rank_fithree)
   fgsea_list_deseq2_stat_fithree_master <- do.call(rbind, fgsea_list_deseq2_stat_fithree)
 
-  save(master_list, fitwo_list, fithree,
+  save(master_list, fitwo, fithree,
        fgsea_list_limma_rank_fithree_master,
        fgsea_list_deseq2_stat_fithree_master,
        file = paste0(outdir, "/", tag, ".full_results.RData"))
+
+  pc_fgsea_limma_de_list <- per_contrast_fgsea_de(fgsea_list_limma_rank_fithree_master)
+
 }

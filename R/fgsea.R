@@ -112,79 +112,118 @@ fgsea_plot <- function(res, sig_res = NULL, msigdb_species = "Homo sapiens", msi
   ggplot2::ggsave(gg_fgsea, file = paste0(out_dir, "/plots/", tag , ".fgsea_sig.ggplot2.pdf"))
 
   ##output results per gene
-  pathways_sig_res_tb <- msigdb_pathlist[names(msigdb_pathlist) %in% fgsea_res_sig_tb$pathway] %>%
+  pathways_res_tb <- msigdb_pathlist[names(msigdb_pathlist) %in% fgsea_res_sig_tb$pathway] %>%
                      tibble::enframe("pathway", dplyr::all_of(gene_col)) %>%
                      tidyr::unnest(cols = gene_col) %>%
                      dplyr::inner_join(sig_res, by = gene_col) %>%
                      dplyr::filter(!!as.symbol(sig_col) < !!padj) %>%
                      dplyr::distinct()
-  readr::write_tsv(pathways_sig_res_tb, file = paste0(out_dir, "/de_pathways/", tag , ".fgsea_pathway.tsv"))
-  return(pathways_sig_res_tb)
+  readr::write_tsv(pathways_res_tb, file = paste0(out_dir, "/de_pathways/", tag , ".fgsea_pathway.tsv"))
+  return(pathways_res_tb)
 }
 
-##run fgsea on each MR set individually, returning list same length as MRs, table of FGSEA
-fgseamsViperIndiv <- function(mrs, mrsstat, pathway, qval, TAG, OUTDIR, gene_col=NULL) {
+#' Function to take output table from multiple contrasts
+#' take each level of contrasts and combine those levels into master tables
+#' filter based on min genes per master table
+#'
+#' @param fgsea_master output table from do.call(rbind, x) for list x returned from lapply on fgsea_plot()
+#' @param occupancy % of genes in the pathway that allow use of the pathway for ssgsea
+#' @param output_dir path to where output goes
+#' @param tag string used to prefix output
+#' @return table of pathways for each contrast level
+#' @export
 
-  ##mrs is output from msViper, with an es object with specified mrstat as name
-  ##mrsstat is statistic used to rank data, comes from msViper
-  ##pathway is pathway (from MSigDB in GMT format if *gmt, else named list)
-  ##qval is the adjusted p value for all results herein
-  ##gene_col is the name of the column in tibble with gene names found in pathways
+per_contrast_fgsea_de <- function(fgsea_master, occupancy = 5, output_dir, tag) {
 
-  if(is.null(gene_col)){
-    gene_col <- "external_gene_name"
+  if(! "contrast" %in% colnames(fgsea_master)){
+    stop("Require one column 'contrast' separated by '-' to split into levels")
   }
 
-  if(is.null(geneset)){
-    geneset <- names(mrs$es[[mrsstat]])
-  }
-
-  if(length(grep(".gmt$", pathway, perl=TRUE))==1){
-    pathways_msig <- gmtPathways(pathway)
-  }
-
-  ##create ranks
-  ranks <- as_tibble(data.frame(stat=mrs$es[[mrsstat]]), rownames="external_gene_name") %>%
-           dplyr::filter(external_gene_name %in% geneset) %>%
-           dplyr::select(gene_col, stat) %>%
-           na.omit() %>%
-           tibble::deframe()
-
-  ##run, order fgsea
-  fgsea_res <- fgsea(pathways=pathways_msig, stats=ranks, nperm=1000000)
-  fgsea_res_le <- fgsea_res[lapply(fgsea_res$leadingEdge,length)>25,]
-  fgsea_resTidy <- as_tibble(fgsea_res_le) %>%
-                  dplyr::mutate(FDR = p.adjust(pval,method="BH")) %>%
-                  dplyr::filter(padj < 0.1) %>%
-                  dplyr::arrange(desc(NES))
+  ##levels of contrast
+  conts <- unique(unlist(strsplit(unique(fgsea_master$contrast), "-")))
 
   ##
-  pathways_msig.DEsig.absFC2 <- pathways_msig %>% enframe("pathway", gene_col) %>%
-                    unnest() %>%
-                    inner_join(DESeqResults.t, by=gene_col) %>%
-                    dplyr::mutate(absFC = logratio2foldchange(log2FoldChange)) %>%
-                    dplyr::filter(padj < qval) %>%
-                    dplyr::filter(abs(absFC) > 2) %>%
-                    left_join(., fgsea_resTidy, by="pathway") %>%
-                    dplyr::select(pathway, gene_col, padj.y, NES, padj.x, absFC) %>%
-                    dplyr::rename(padj_pathway = "padj.y", padj_gene = "padj.x") %>%
-                    dplyr::arrange(NES)
+  conts_list <- lapply(conts, function(f){
+    pc_fg <- dplyr::filter(.data = fgsea_master, !grepl(f, contrast))
 
-  ##plot
-  pathways_msig.DEsig.absFC2.plt <- pathways_msig.DEsig.absFC2 %>%
-                                    dplyr::select(pathway, NES, padj_pathway) %>%
-                                    dplyr::rename(padj = "padj_pathway") %>%
-                                    dplyr::filter(padj < qval) %>%
-                                    distinct()
+    ##count gene occupancy per pathway and filter
+    pc_fg_n <- dplyr::group_by(.data = pc_fg, pathway) %>%
+               dplyr::tally() %>%
+               dplyr::left_join(pc_fg) %>%
+               dplyr::mutate(occ = 100*(n/size)) %>%
+               dplyr::filter(occ > !!occupancy)
 
-  ggplot(pathways_msig.DEsig.absFC2.plt, ggplot2::aes(reorder(pathway, NES), NES)) +
-    geom_col(ggplot2::aes(fill=padj<qval)) +
-    coord_flip() +
-    labs(x="Pathway", y="Normalized Enrichment Score",
-         title=paste0(TAG, " pathways NES from GSEA")) +
-    theme_minimal() +
-    theme(axis.text.y=element_text(size=5))
-  ggsave(paste0(OUTDIR, "/fgseaDESeq.", TAG, ".sig.absFC2.plt.pdf"))
+    ##filter occupancy
 
-  return(pathways_msig.DEsig.absFC2)
+
+  })
+
 }
+
+
+# ##run fgsea on each MR set individually, returning list same length as MRs, table of FGSEA
+# fgseamsViperIndiv <- function(mrs, mrsstat, pathway, qval, TAG, OUTDIR, gene_col=NULL) {
+#
+#   ##mrs is output from msViper, with an es object with specified mrstat as name
+#   ##mrsstat is statistic used to rank data, comes from msViper
+#   ##pathway is pathway (from MSigDB in GMT format if *gmt, else named list)
+#   ##qval is the adjusted p value for all results herein
+#   ##gene_col is the name of the column in tibble with gene names found in pathways
+#
+#   if(is.null(gene_col)){
+#     gene_col <- "external_gene_name"
+#   }
+#
+#   if(is.null(geneset)){
+#     geneset <- names(mrs$es[[mrsstat]])
+#   }
+#
+#   if(length(grep(".gmt$", pathway, perl=TRUE))==1){
+#     pathways_msig <- gmtPathways(pathway)
+#   }
+#
+#   ##create ranks
+#   ranks <- as_tibble(data.frame(stat=mrs$es[[mrsstat]]), rownames="external_gene_name") %>%
+#            dplyr::filter(external_gene_name %in% geneset) %>%
+#            dplyr::select(gene_col, stat) %>%
+#            na.omit() %>%
+#            tibble::deframe()
+#
+#   ##run, order fgsea
+#   fgsea_res <- fgsea(pathways=pathways_msig, stats=ranks, nperm=1000000)
+#   fgsea_res_le <- fgsea_res[lapply(fgsea_res$leadingEdge,length)>25,]
+#   fgsea_resTidy <- as_tibble(fgsea_res_le) %>%
+#                   dplyr::mutate(FDR = p.adjust(pval,method="BH")) %>%
+#                   dplyr::filter(padj < 0.1) %>%
+#                   dplyr::arrange(desc(NES))
+#
+#   ##
+#   pathways_msig.DEsig.absFC2 <- pathways_msig %>% enframe("pathway", gene_col) %>%
+#                     unnest() %>%
+#                     inner_join(DESeqResults.t, by=gene_col) %>%
+#                     dplyr::mutate(absFC = logratio2foldchange(log2FoldChange)) %>%
+#                     dplyr::filter(padj < qval) %>%
+#                     dplyr::filter(abs(absFC) > 2) %>%
+#                     left_join(., fgsea_resTidy, by="pathway") %>%
+#                     dplyr::select(pathway, gene_col, padj.y, NES, padj.x, absFC) %>%
+#                     dplyr::rename(padj_pathway = "padj.y", padj_gene = "padj.x") %>%
+#                     dplyr::arrange(NES)
+#
+#   ##plot
+#   pathways_msig.DEsig.absFC2.plt <- pathways_msig.DEsig.absFC2 %>%
+#                                     dplyr::select(pathway, NES, padj_pathway) %>%
+#                                     dplyr::rename(padj = "padj_pathway") %>%
+#                                     dplyr::filter(padj < qval) %>%
+#                                     distinct()
+#
+#   ggplot(pathways_msig.DEsig.absFC2.plt, ggplot2::aes(reorder(pathway, NES), NES)) +
+#     geom_col(ggplot2::aes(fill=padj<qval)) +
+#     coord_flip() +
+#     labs(x="Pathway", y="Normalized Enrichment Score",
+#          title=paste0(TAG, " pathways NES from GSEA")) +
+#     theme_minimal() +
+#     theme(axis.text.y=element_text(size=5))
+#   ggsave(paste0(OUTDIR, "/fgseaDESeq.", TAG, ".sig.absFC2.plt.pdf"))
+#
+#   return(pathways_msig.DEsig.absFC2)
+# }
