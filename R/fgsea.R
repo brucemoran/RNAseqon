@@ -113,13 +113,13 @@ fgsea_plot <- function(res, sig_res = NULL, msigdb_species = "Homo sapiens", msi
   ggplot2::ggsave(gg_fgsea, file = paste0(out_dir, "/plots/", tag , ".fgsea_sig.ggplot2.pdf"))
 
   ##output results per gene
-  pathways_res_tb <- msigdb_pathlist[names(msigdb_pathlist) %in% fgsea_res_sig_tb$pathway] %>%
-                     tibble::enframe("pathway", dplyr::all_of(gene_col)) %>%
-                     tidyr::unnest(cols = gene_col) %>%
-                     dplyr::inner_join(sig_res, by = gene_col) %>%
-                     dplyr::filter(!!as.symbol(sig_col) < !!padj) %>%
-                     dplyr::distinct() %>%
-                     dplyr::mutate(contrast = !!contrast)
+  pathways_sig_res_tb <- msigdb_pathlist[names(msigdb_pathlist) %in% fgsea_res_sig_tb$pathway] %>%
+                         tibble::enframe("pathway", dplyr::all_of(gene_col)) %>%
+                         tidyr::unnest(cols = gene_col) %>%
+                         dplyr::inner_join(sig_res, by = gene_col) %>%
+                         dplyr::filter(!!as.symbol(sig_col) < !!padj) %>%
+                         dplyr::distinct() %>%
+                         dplyr::mutate(contrast = !!contrast)
   readr::write_tsv(pathways_sig_res_tb, file = paste0(out_dir, "/de_pathways/", tag , ".fgsea_pathway.tsv"))
   return(pathways_sig_res_tb)
 }
@@ -154,12 +154,23 @@ per_contrast_fgsea_de <- function(fgsea_master, occupancy = 5, output_dir, tag) 
                dplyr::left_join(pc_fg) %>%
                dplyr::mutate(occ = 100*(n/size)) %>%
                dplyr::filter(occ > !!occupancy)
-
-    ##filter occupancy
-
-
   })
 
+  ##second list of genesets per pathway per list
+  gs_pway_conts_list <- lapply(conts_list, function(f){
+    pways <- unique(f$pathway)
+    pways_list <- lapply(pways, function(p){
+      dplyr::filter(.data = f, pathway %in% p) %>%
+      dplyr::select(external_gene_name) %>%
+      unlist() %>% as.vector() %>% unique()
+    })
+    names(pways_list) <- pways
+    return(pways_list)
+  })
+
+  names(gs_pway_conts_list) <- names(conts_list) <- conts
+
+  return(list(conts_list,  gs_pway_conts_list))
 }
 
 
