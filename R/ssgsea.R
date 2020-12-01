@@ -12,7 +12,7 @@
 ssgsea_pca <- function(cont_pways, log2tpm_mat, msigdb_cat = "H", hallmark_tb = NULL, output_dir, contrast) {
 
   print(paste0("Working on: ", contrast))
-  
+
   ##output dir
   out_dir <- paste0(output_dir, "/ssgsea")
   dir.create(paste0(out_dir, "/plots"), recursive = TRUE, showWarnings = FALSE)
@@ -83,7 +83,7 @@ ssgsea_rotationPCA <- function(x, hallmark_tb = NULL, contrast, returnData = FAL
                                    yend = (PC2*3), color = Process_Category),
                                    arrow = ggplot2::arrow(length = ggplot2::unit(1/2, "picas"),
                                                          ends="last", type = "closed"), size = 1) +
-             ggplot2::geom_text(data = d,
+             ggrepel::geom_text_repel(data = d,
                                 ggplot2::aes(x = (PC1*3), y = (PC2*3), label = gsub("HALLMARK_", "", Hallmark_Name), colour = Process_Category),
                                 size = 2, fontface = "bold")
     } else {

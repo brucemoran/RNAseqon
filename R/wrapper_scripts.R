@@ -36,7 +36,7 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
 
   ##create required inputs to modules
   count_data <- so_to_raw_counts(sot[[1]])
-  tpm_tb <- tpm_tb <- sot[[1]]$obs_raw_tpm$wide
+  tpm_tb <- sot[[1]]$obs_raw_tpm$wide
   anno_tb <- tibble::as_tibble(sot[[2]])
   metadata_tb <- RNAseqR::get_metadata(metadata_csv, data_dir)
   outdir <- paste0(output_dir, "/RData")
