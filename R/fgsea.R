@@ -113,10 +113,18 @@ fgsea_plot <- function(res, sig_res = NULL, msigdb_species = "Homo sapiens", msi
   ggplot2::ggsave(gg_fgsea, file = paste0(out_dir, "/plots/", tag , ".fgsea_sig.ggplot2.pdf"))
 
   ##output results per gene
+  size_list <- lapply(seq_along(msigdb_pathlist), function(f){
+      fo <- data.frame(pathway = names(msigdb_pathlist)[f],
+                       size = length(msigdb_pathlist[[f]]))
+      return(fo)
+  })
+  size_tb <- tibble::as_tibble(do.call(rbind, size_list))
+
   pathways_sig_res_tb <- msigdb_pathlist[names(msigdb_pathlist) %in% fgsea_res_sig_tb$pathway] %>%
                          tibble::enframe("pathway", dplyr::all_of(gene_col)) %>%
                          tidyr::unnest(cols = gene_col) %>%
                          dplyr::inner_join(sig_res, by = gene_col) %>%
+                         dplyr::left_join(size_tb) %>%
                          dplyr::filter(!!as.symbol(sig_col) < !!padj) %>%
                          dplyr::distinct() %>%
                          dplyr::mutate(contrast = !!contrast)
@@ -128,49 +136,38 @@ fgsea_plot <- function(res, sig_res = NULL, msigdb_species = "Homo sapiens", msi
 #' take each level of contrasts and combine those levels into master tables
 #' filter based on min genes per master table
 #'
-#' @param fgsea_master output table from do.call(rbind, x) for list x returned from lapply on fgsea_plot()
+#' @param fgsea_contrast_list named list returned from lapply on fgsea_plot()
 #' @param occupancy % of genes in the pathway that allow use of the pathway for ssgsea
 #' @param output_dir path to where output goes
 #' @param tag string used to prefix output
 #' @return table of pathways for each contrast level
 #' @export
 
-per_contrast_fgsea_de <- function(fgsea_master, occupancy = 5, output_dir, tag) {
+per_contrast_fgsea_de <- function(fgsea_contrast_list, occupancy = 5, output_dir, tag) {
 
-  if(! "contrast" %in% colnames(fgsea_master)){
-    stop("Require one column 'contrast' separated by '-' to split into levels")
-  }
+  lapply(fgsea_contrast_list, function(f){
 
-  ##levels of contrast
-  conts <- unique(unlist(strsplit(unique(fgsea_master$contrast), "-")))
-
-  ##
-  conts_list <- lapply(conts, function(f){
-    pc_fg <- dplyr::filter(.data = fgsea_master, !grepl(f, contrast))
+    ##levels of contrast
+    cont_levels <- unique(unlist(strsplit(unique(f$contrast), "-")))
 
     ##count gene occupancy per pathway and filter
-    pc_fg_n <- dplyr::group_by(.data = pc_fg, pathway) %>%
+    pc_fg_n <- dplyr::group_by(.data = f, pathway) %>%
                dplyr::tally() %>%
-               dplyr::left_join(pc_fg) %>%
+               dplyr::left_join(f) %>%
                dplyr::mutate(occ = 100*(n/size)) %>%
                dplyr::filter(occ > !!occupancy)
-  })
 
-  ##second list of genesets per pathway per list
-  gs_pway_conts_list <- lapply(conts_list, function(f){
-    pways <- unique(f$pathway)
+    ##second list of genesets per pathway per list
+    pways <- unique(pc_fg_n$pathway)
     pways_list <- lapply(pways, function(p){
-      dplyr::filter(.data = f, pathway %in% p) %>%
+      dplyr::filter(.data = pc_fg_n, pathway %in% p) %>%
       dplyr::select(external_gene_name) %>%
       unlist() %>% as.vector() %>% unique()
     })
     names(pways_list) <- pways
-    return(pways_list)
-  })
 
-  names(gs_pway_conts_list) <- names(conts_list) <- conts
-
-  return(list(conts_list,  gs_pway_conts_list))
+    return(list(pc_fg_n,  pways_list))
+  }
 }
 
 
