@@ -56,7 +56,7 @@ master_parse_join <- function(input_dir){
 #' @param f table object with colnames specified in colns
 #' @param colns colnames of f on which to aggregate
 #' @param pattern string to grep for colnames on which to operate
-#' @return list object of 'found-in-2' and 'all-3' results, including unique cols from each module
+#' @return agg_f aggregated gene ID, names table
 #' @importFrom magrittr '%>%'
 #' @export
 
@@ -70,7 +70,7 @@ group_agg_multi <- function(f, colns = NULL, pattern = NULL){
     colns <- grep(pattern, colnames(f), value = TRUE)
   }
 
-  f %>% dplyr:::rowwise() %>%
+  agg_f <- f %>% dplyr:::rowwise() %>%
          dplyr::group_by(!!as.symbol(colns[1]), !!as.symbol(colns[2])) %>%
          dplyr::mutate("agg_col3" = paste0(!!as.symbol(colns[3]), collapse=",")) %>%
          dplyr::mutate("agg_col4" = paste0(!!as.symbol(colns[4]), collapse=",")) %>%
@@ -79,7 +79,7 @@ group_agg_multi <- function(f, colns = NULL, pattern = NULL){
          dplyr::rename(!!colns[3] := agg_col3, !!colns[4] := agg_col4) %>%
          dplyr::select(tidyselect::all_of(colns), dplyr::everything()) %>%
          dplyr::distinct(ensembl_gene_id, .keep_all = TRUE)
-
+  return(agg_f)
 }
 
 #' Aggregate 1 columns based on grouping on 2 column
@@ -87,7 +87,7 @@ group_agg_multi <- function(f, colns = NULL, pattern = NULL){
 #' @param f table object with colnames specified in colns
 #' @param colns colnames of f on which to aggregate
 #' @param pattern string to grep for colnames on which to operate
-#' @return list object of 'found-in-2' and 'all-3' results, including unique cols from each module
+#' @return agg_f aggregated gene ID, names table
 #' @importFrom magrittr '%>%'
 #' @export
 
@@ -101,7 +101,7 @@ group_agg_two <- function(f, colns = NULL, pattern = NULL){
     colns <- grep(pattern, colnames(f), value = TRUE)
   }
 
-  f %>% dplyr:::rowwise() %>%
+  agg_f <- f %>% dplyr:::rowwise() %>%
         dplyr::group_by(!!as.symbol(colns[2])) %>%
         dplyr::mutate("agg_col1" = paste0(!!as.symbol(colns[1]), collapse=",")) %>%
         dplyr::ungroup() %>%
@@ -109,13 +109,14 @@ group_agg_two <- function(f, colns = NULL, pattern = NULL){
         dplyr::rename(!!colns[1] := agg_col1) %>%
         dplyr::select(tidyselect::all_of(colns), dplyr::everything()) %>%
         dplyr::distinct(ensembl_gene_id, .keep_all = TRUE)
+  return(agg_f)
 }
 
 #' Found-in-2
 #'
 #' @param master_list list of 3 DE results
 #' @param padj significance threshold below which to determine significance (adjusted by FDR)
-#' @return tibble of results including unique cols from each module
+#' @return fitwo_list list of tibble of results including unique cols from each module
 #' @importFrom magrittr '%>%'
 #' @export
 
@@ -156,7 +157,7 @@ found_in_two <- function(master_list, padj = 0.01){
 #'
 #' @param master_list list of 3 DE results
 #' @param padj significance threshold below which to determine significance (adjusted by FDR)
-#' @return tibble of results including unique cols from each module
+#' @return per_contrast_list list of tibble of results including unique cols from each module
 #' @importFrom magrittr '%>%'
 #' @export
 
@@ -197,7 +198,7 @@ found_in_three <- function(master_list, padj = 0.01){
 #' @param padj significance threshold below which to determine significance (adjusted by FDR)
 #' @param output_dir path to where output goes
 #' @param tag string used to prefix output
-#' @return venn diagram of 3 DE callers
+#' @return none, venn diagram of 3 DE callers printed
 #' @importFrom magrittr '%>%'
 #' @export
 

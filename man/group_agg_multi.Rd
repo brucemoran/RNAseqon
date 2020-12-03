@@ -16,7 +16,7 @@ group_agg_multi(f, colns = NULL, pattern = NULL)
 \item{pattern}{string to grep for colnames on which to operate}
 }
 \value{
-list object of 'found-in-2' and 'all-3' results, including unique cols from each module
+agg_f aggregated gene ID, names table
 }
 \description{
 Aggregate 3, 4 columns based on grouping on 1, 2 columns

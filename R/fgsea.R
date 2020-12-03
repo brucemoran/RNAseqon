@@ -145,7 +145,7 @@ fgsea_plot <- function(res, sig_res = NULL, msigdb_species = "Homo sapiens", msi
 
 per_contrast_fgsea_de <- function(fgsea_contrast_list, occupancy = 5, output_dir, tag) {
 
-  lapply(fgsea_contrast_list, function(f){
+  pc_fg_pway_list <- lapply(fgsea_contrast_list, function(f){
 
     ##levels of contrast
     cont_levels <- unique(unlist(strsplit(unique(f$contrast), "-")))
@@ -166,8 +166,9 @@ per_contrast_fgsea_de <- function(fgsea_contrast_list, occupancy = 5, output_dir
     })
     names(pways_list) <- pways
 
-    return(list(pc_fg_n,  pways_list))
-  }
+    return(list(pc_fg_n, pways_list))
+  })
+  return(pc_fg_pway_list)
 }
 
 

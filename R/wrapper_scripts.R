@@ -41,9 +41,9 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
   ##make log2tpm
   log2tpm <- dplyr::mutate(.data = tpm_tb, dplyr::across(where(is.numeric), log2))
 
-  ##'aggregate' ens IDs to get single ext ID for TPM
+  ##aggregate ens IDs to get single ext ID for TPM
   ##NB that ens IDs are unique, but map to multiple ext IDs
-  agg_log2tpm_tb <- agg_log2tpm <- group_agg_two(log2tpm, pattern = "_gene")
+  agg_log2tpm_tb <- agg_log2tpm <- RNAseqR::group_agg_two(log2tpm, pattern = "_gene")
   agg_log2tpm_df <- as.data.frame(agg_log2tpm_tb)
   rownames(agg_log2tpm_df) <- agg_log2tpm_df$external_gene_name
   agg_log2tpm_df <- agg_log2tpm_df[, ! colnames(agg_log2tpm_df) %in% c("external_gene_name", "ensembl_gene_id")]
@@ -100,7 +100,7 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
     fgsea_plot(res = master_list[["limma"]][[f]],
                sig_res = fithree[[f]],
                msigdb_species = msigdb_species,
-               msigdb_cat = msigdb_cat,
+               msigdb_cat = "H",
                gene_col = NULL,
                padj = 0.01,
                output_dir = output_dir,
@@ -108,10 +108,10 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
                contrast = f)
   })
   fgsea_list_deseq2_stat_fithree <- lapply(names(master_list[["DESeq2"]]), function(f){
-    fgsea_plot(res = master_list[["DESeq2"]][[f]],
+    RNAseqR::fgsea_plot(res = master_list[["DESeq2"]][[f]],
                sig_res = fithree[[f]],
                msigdb_species = msigdb_species,
-               msigdb_cat = msigdb_cat,
+               msigdb_cat = "H",
                gene_col = NULL,
                padj = 0.01,
                output_dir = output_dir,
@@ -131,7 +131,7 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
        file = paste0(outdir, "/", tag, ".full_results.RData"))
 
   ##per contrast DE overlap with pathways, and gene sets in lists
-  pc_fgsea_limma_de_list <- per_contrast_fgsea_de(fgsea_list_limma_rank_fithree, occupancy = 10)
+  pc_fgsea_limma_de_list <- per_contrast_fgsea_de(fgsea_list_limma_rank_fithree, occupancy = 5)
   names(pc_fgsea_limma_de_list) <- names(fgsea_list_limma_rank_fithree)
 
   ##use these as input to ssGSEA in GSVA

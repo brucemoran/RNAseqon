@@ -5,8 +5,8 @@
 #' @param msigdb_cat one of 'c("H", paste0("C", c(1:7)))', see: gsea-msigdb.org/gsea/msigdb/collections.jsp; if H, loads Process_Category data from Liberzon 2015 paper to colour PCA
 #' @param output_dir path to where output goes
 #' @param contrast string used to prefix output naming the contrast being investigated
-#' @param metadata tibble of sample, <group> where group colours the PCA
-#' @return ssgsea results table of each geneset and sample
+#' @param metadata tibble of sample, \<group\> where group colours the PCA
+#' @return ssgsea_ggp_list results table of each geneset and sample
 #' @export
 
 ssgsea_pca <- function(pways, log2tpm_mat, msigdb_cat = "H", output_dir, contrast, metadata) {
@@ -46,7 +46,8 @@ ssgsea_pca <- function(pways, log2tpm_mat, msigdb_cat = "H", output_dir, contras
 
     readr::write_tsv(tibble::as_tibble(ssgsea_res, rownames = rns), file = paste0(out_dir, "/data/", contrast , ".ssgsea_res.tsv"))
     ggplot2::ggsave(ggp[[1]], file = paste0(out_dir, "/plots/", contrast , ".ssgsea_rotationPCA.pdf"))
-    return(list(ssgsea_res, ggp))
+    ssgsea_ggp_list <- list(ssgsea_res, ggp)
+    return(ssgsea_ggp_list)
   } else {
     print("No genesets in pathways, skipping...")
   }
@@ -55,10 +56,10 @@ ssgsea_pca <- function(pways, log2tpm_mat, msigdb_cat = "H", output_dir, contras
 #' Plotting PCA function
 #' @param ssgsea output table
 #' @param hallmark_tb hallmark data with Process_Category column to colour by process
-#' @param metadata tibble of sample, <group> where group colours the PCA
+#' @param metadata tibble of sample, \<group\> where group colours the PCA
 #' @param contrast string to title plot
 #' @param returnData flag to allow data to be returned
-#' @return ggp ggplot2 object for printing
+#' @return ggp_pca_list ggplot2 object for printing, pca for safe keeping
 #' @export
 
 ssgsea_rotationPCA <- function(x, metadata, hallmark_tb = NULL, contrast, returnData = FALSE) {
@@ -128,5 +129,6 @@ ssgsea_rotationPCA <- function(x, metadata, hallmark_tb = NULL, contrast, return
       #        ggplot2::annotate("text",x=pca$x[,1], y = pca$x[,2]-0.4, label = colnames(x), cex = 1.6) +
       #        ggplot2::ggtitle(paste0("PCA plot using ", intgroup))
     }
-    return(list(ggp, pca))
+    ggp_pca_list <- list(ggp, pca)
+    return(ggp_pca_list)
 }
