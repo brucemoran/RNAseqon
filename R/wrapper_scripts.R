@@ -53,7 +53,7 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
   metadata_tb <- RNAseqR::get_metadata(metadata_csv, data_dir)
   outdir <- paste0(output_dir, "/RData")
   dir.create(outdir, recursive = TRUE, showWarnings = FALSE)
-  save(count_data, tpm_tb, agg_log2tpm_tb, agg_log2tpm_ext_mat, anno_tb, metadata_tb, file = paste0(outdir, "/", tag, ".count_tpm_anno_metadata.RData"))
+  save(count_data, anno_tb, tag, tpm_tb, metadata_csv, metadata_design, output_dir, control_reference, agg_log2tpm_tb, agg_log2tpm_ext_mat, anno_tb, metadata_tb, file = paste0(outdir, "/", tag, ".DE_ready.RData"))
 
   ##run modules
   RNAseqR::DESeq2_module(count_data = count_data,
