@@ -97,7 +97,7 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
   ##fgsea
   ##run on limma, DESeq2 output per contrast
   fgsea_list_limma_rank_fithree <- lapply(names(master_list[["limma"]]), function(f){
-    fgsea_plot(res = master_list[["limma"]][[f]],
+    RNAseqR::fgsea_plot(res = master_list[["limma"]][[f]],
                sig_res = fithree[[f]],
                msigdb_species = msigdb_species,
                msigdb_cat = "H",
@@ -126,6 +126,8 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
 
   ##save outputs
   save(master_list, fitwo, fithree,
+       fgsea_list_limma_rank_fithree,
+       fgsea_list_deseq2_stat_fithree,
        fgsea_list_limma_rank_fithree_master,
        fgsea_list_deseq2_stat_fithree_master,
        file = paste0(outdir, "/", tag, ".full_results.RData"))
@@ -155,4 +157,5 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
                                                     contrast = f,
                                                     metadata = metadata_pca)
                     })
+  names(pc_ssgsea_list) <- names(pc_fgsea_limma_de_list)
 }
