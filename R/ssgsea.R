@@ -46,7 +46,7 @@ ssgsea_pca <- function(pways, log2tpm_mat, msigdb_cat = "H", output_dir, contras
 
     readr::write_tsv(tibble::as_tibble(ssgsea_res, rownames = rns), file = paste0(out_dir, "/data/", contrast , ".ssgsea_res.tsv"))
     ggplot2::ggsave(ggp[[1]], file = paste0(out_dir, "/plots/", contrast , ".ssgsea_rotationPCA.pdf"))
-    ssgsea_ggp_list <- list(ssgsea_res, ggp)
+    ssgsea_ggp_list <- list(ssgsea_res = ssgsea_res, ggplot_pca = ggp)
     return(ssgsea_ggp_list)
   } else {
     print("No genesets in pathways, skipping...")
@@ -129,6 +129,6 @@ ssgsea_rotationPCA <- function(x, metadata, hallmark_tb = NULL, contrast, return
       #        ggplot2::annotate("text",x=pca$x[,1], y = pca$x[,2]-0.4, label = colnames(x), cex = 1.6) +
       #        ggplot2::ggtitle(paste0("PCA plot using ", intgroup))
     }
-    ggp_pca_list <- list(ggp, pca)
+    ggp_pca_list <- list(ggplot = ggp, pca = pca)
     return(ggp_pca_list)
 }
