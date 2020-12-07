@@ -152,13 +152,12 @@ DESeq2_module <- function(count_data, anno_tb = NULL, tpm_tb = NULL, tag = NULL,
 #' @param x variance stabilized DESeq2 object
 #' @param intgroup which colname from metadata_csv to be output on plot
 #' @param ntop top n genes to use by variance
-#' @param returnData flag to allow data to be returned
 #' @param anno_tb tibble of ensembl_gene_id - external_gene_id mappings for annotation
 #' @param pc_limit integer percent variance accounted by PC for inclusion in plots  (default: 10%)
 #' @return list of ggplot2 objects for printing (PCA, PCs, loadings)
 #' @export
 
-BMplotPCA <- function(x, intgroup = NULL, ntop = 15000, returnData = FALSE, anno_tb, pc_limit = 10) {
+BMplotPCA <- function(x, intgroup = NULL, ntop = 15000, anno_tb, pc_limit = 10) {
     rv <- matrixStats::rowVars(SummarizedExperiment::assay(x))
     select <- order(rv, decreasing = TRUE)[seq_len(min(ntop,
         length(rv)))]
@@ -173,10 +172,6 @@ BMplotPCA <- function(x, intgroup = NULL, ntop = 15000, returnData = FALSE, anno
     intgroup.df <- as.data.frame(SummarizedExperiment::colData(x)[, intgroup, drop = FALSE])
     group <- factor(apply(intgroup.df, 1, paste, collapse = " : "))
 
-    if (returnData) {
-        attr(d, "percentVar") <- percentVar[1:2]
-        return(d)
-    }
     pca_plot <- function(d, group, intgroup.df, pcv){
 
       if(nlevels(group)>6){
@@ -222,12 +217,12 @@ BMplotPCA <- function(x, intgroup = NULL, ntop = 15000, returnData = FALSE, anno
     }
 
     ##lapply to make all PC > pc_limit included
-    pcv_u <- percentVars[percentVars > pc_limit/100]
+    pcv_u <- percentVar[percentVar > pc_limit/100]
     ggps <- lapply(2:length(pcv_u), function(f){
 
         d <- data.frame(PC1 = pca$x[, 1], PC2 = pca$x[, f], intgroup.df, names = colnames(x))
         colnames(d)[colnames(d) == "PC2"] <- paste0("PC", f)
-        ggp <- pca_plot(d, group, intgroup.df, pcv = percentVars[c(1,f)])
+        ggp <- pca_plot(d, group, intgroup.df, pcv = percentVar[c(1,f)])
         return(ggp)
 
     })
