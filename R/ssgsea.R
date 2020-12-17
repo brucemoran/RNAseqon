@@ -1,7 +1,7 @@
 #' Function to run ssGSEA using the GSVA package and return PCA of results
 #'
 #' @param pways list of pathway genesets to use in ssGSEA
-#' @param log2tpm_tb tibble of log2tpm values per sample across genes in gene lists
+#' @param log2tpm_mat matrix of log2tpm values per sample across genes in gene lists
 #' @param msigdb_cat one of 'c("H", paste0("C", c(1:7)))', see: gsea-msigdb.org/gsea/msigdb/collections.jsp; if H, loads Process_Category data from Liberzon 2015 paper to colour PCA
 #' @param output_dir path to where output goes
 #' @param contrast string used to prefix output naming the contrast being investigated
