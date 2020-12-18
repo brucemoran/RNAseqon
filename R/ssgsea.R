@@ -62,9 +62,9 @@ ssgsea_pca <- function(pways, log2tpm_mat, msigdb_cat = "H", output_dir, contras
 #' @return ggp_pca_list ggplot2 object for printing, pca for safe keeping
 #' @export
 
-ssgsea_rotationPCA <- function(x, metadata, hallmark_tb = NULL, contrast, returnData = FALSE) {
+ssgsea_rotationPCA <- function(ssgsea, metadata, hallmark_tb = NULL, contrast, returnData = FALSE) {
 
-    pca <- prcomp(t(x))
+    pca <- prcomp(t(ssgsea))
     percentVar <- pca$sdev^2/sum(pca$sdev^2)
 
     ##make rotation data for hallmarks
