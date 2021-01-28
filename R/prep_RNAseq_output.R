@@ -65,11 +65,11 @@ brucemoran_rnaseq_kallisto_parser <- function(metadata_csv, data_dir = NULL, agg
   }
 
   ##parse in kallisto output to metadata
-  metadata <- RNAseqR::get_metadata(metadata_csv, data_dir)
+  metadata <- RNASeqon::get_metadata(metadata_csv, data_dir)
 
   ##annotation to use
   print("Getting tx2gene object")
-  tx2gene <- RNAseqR::get_tx2gene(genome_prefix)
+  tx2gene <- RNASeqon::get_tx2gene(genome_prefix)
 
   if(genome_prefix != "hsapiens"){
     tx2gene1 <- tx2gene
@@ -87,7 +87,7 @@ brucemoran_rnaseq_kallisto_parser <- function(metadata_csv, data_dir = NULL, agg
                             aggregation_column = agg_col,
                             num_cores = thread_alloc,
                             max_bootstrap = 50)
-  so <- RNAseqR::so_obs_raw_out(so)
+  so <- RNASeqon::so_obs_raw_out(so)
   rhdf5::h5closeAll()
 
   return(list(so, tx2gene1))
@@ -204,7 +204,7 @@ so_obs_raw_out <- function(so, group_col = NULL, which_value = "est_counts"){
       else{
 
         #est_counts
-        so$obs_raw_count$wide <- tibble::as_tibble(RNAseqR::obs_raw_widen(so, which_value = "est_counts", group_col))
+        so$obs_raw_count$wide <- tibble::as_tibble(RNASeqon::obs_raw_widen(so, which_value = "est_counts", group_col))
         so$obs_raw_count$long <- so$obs_raw_count$wide %>%
                                  tidyr::pivot_longer(cols = tidyselect::all_of(long_col),
                                                      names_to = "sample",
@@ -212,7 +212,7 @@ so_obs_raw_out <- function(so, group_col = NULL, which_value = "est_counts"){
                                  dplyr::select(1,2,4,3)
 
         #tpm
-        so$obs_raw_tpm$wide <- tibble::as_tibble(RNAseqR::obs_raw_widen(so, which_value = "tpm", group_col))
+        so$obs_raw_tpm$wide <- tibble::as_tibble(RNASeqon::obs_raw_widen(so, which_value = "tpm", group_col))
         so$obs_raw_tpm$long <- so$obs_raw_tpm$wide %>%
                                tidyr::pivot_longer(cols = tidyselect::all_of(long_col),
                                                    names_to = "sample",
