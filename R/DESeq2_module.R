@@ -139,8 +139,12 @@ DESeq2_module <- function(count_data, anno_tb = NULL, tpm_tb = NULL, tag = NULL,
 
   ##PCA
   lapply(design_vec, function(f){
-    bmpcaplot <- BMplotPCA(vsd, intgroup=c(f))
-    ggplot2::ggsave(paste0(output_dir, "/", tag, ".", f, ".PCA.pdf"), bmpcaplot)
+    bmpcaplot <- BMplotPCA(vsd, intgroup=c(f), anno_tb = anno_tb, pc_limit = 5)
+      pdf(paste0(output_dir, "/", tag, ".", f, ".PCA_PC_loadings.pdf"), onefile = TRUE)
+      lapply(bmpcaplot[[1]], print)
+      print(bmpcaplot[[2]])
+      print(bmpcaplot[[3]])
+    dev.off()
   })
 }
 
@@ -148,45 +152,121 @@ DESeq2_module <- function(count_data, anno_tb = NULL, tpm_tb = NULL, tag = NULL,
 #' @param x variance stabilized DESeq2 object
 #' @param intgroup which colname from metadata_csv to be output on plot
 #' @param ntop top n genes to use by variance
-#' @param returnData flag to allow data to be returned
-#' @return ggp ggplot2 object for printing
+#' @param anno_tb tibble of ensembl_gene_id - external_gene_id mappings for annotation
+#' @param pc_limit integer percent variance accounted by PC for inclusion in plots  (default: 10%)
+#' @return list of ggplot2 objects for printing (PCA, PCs, loadings)
 #' @export
 
-BMplotPCA <- function(x, intgroup = NULL, ntop = 1500, returnData = FALSE) {
+BMplotPCA <- function(x, intgroup = NULL, ntop = 15000, anno_tb, pc_limit = 10) {
     rv <- matrixStats::rowVars(SummarizedExperiment::assay(x))
     select <- order(rv, decreasing = TRUE)[seq_len(min(ntop,
         length(rv)))]
     pca <- prcomp(t(SummarizedExperiment::assay(x)[select, ]))
-    percentVar <- pca$sdev^2/sum(pca$sdev^2)
+    sdPc <- apply(pca$x, 2, sd)
+    percentVar <- sdPc^2/sum(sdPc^2)
+    sdRot <- apply(pca$rotation, 2, sd)
+    percentVarRot <- sdRot^2/sum(sdRot^2)
     if (!all(intgroup %in% names(SummarizedExperiment::colData(x)))) {
         stop("The argument 'intgroup' should specify columns of colData(xx)")
     }
     intgroup.df <- as.data.frame(SummarizedExperiment::colData(x)[, intgroup, drop = FALSE])
     group <- factor(apply(intgroup.df, 1, paste, collapse = " : "))
-    d <- data.frame(PC1 = pca$x[, 1], PC2 = pca$x[, 2], group = group,
-        intgroup.df, names = colnames(x))
-    if (returnData) {
-        attr(d, "percentVar") <- percentVar[1:2]
-        return(d)
-    }
-    if(nlevels(group)>6){
-      ggp <- ggplot2::ggplot(data = d, ggplot2::aes(x = PC1,y = PC2, group = group, colour = group, shape = group)) +
-             ggplot2::scale_shape_manual(values = 1:nlevels(group)) +
-             ggplot2::labs(title = paste0("PCA plot using ", intgroup), x = paste0("PC1: ", round(percentVar[1] *  100), "% variance"),y = paste0("PC2: ", round(percentVar[2] * 100), "% variance")) +
-             ggplot2::annotate("text", x = pca$x[,1], y = pca$x[,2], label = colnames(x), cex = 1.6) +
-             ggplot2::geom_point(size = 3) +
-             ggplot2::ggtitle(paste0("PCA plot using ",intgroup))
+
+    pca_plot <- function(d, group, intgroup.df, pcv){
+
+      if(nlevels(group)>6){
+        ggp <- ggplot2::ggplot(data = d,
+                               ggplot2::aes_string(x = "PC1",
+                                                   y = colnames(d)[2],
+                                                   group = intgroup)) +
+               ggplot2::scale_shape_manual(values = 1:dim(unique(intgroup.df))[1]) +
+               ggplot2::labs(paste0("PCA plot using ", colnames(intgroup.df)), x = paste0("PC1: ", round(pcv[1] *  100), "% variance"),y = paste0(colnames(d)[2], ": ", round(pcv[2] * 100), "% variance")) +
+               ggrepel::geom_text_repel(label = rownames(d),
+                                        colour = "black",
+                                        size = 2,
+                                        fontface = "bold") +
+               ggplot2::geom_point(ggplot2::aes_string(shape = intgroup,
+                                                       colour = intgroup,
+                                                       fill = intgroup),
+                                   size = 3) +
+               ggplot2::ggtitle(paste0("PCA plot using ", colnames(intgroup.df)),
+                                subtitle = paste0(colnames(d)[1], " vs. ", colnames(d)[2]))
+        }
+
+        if(nlevels(group)<=6){
+        ggp <- ggplot2::ggplot(data = d, ggplot2::aes_string(x = "PC1",
+                            y = colnames(d)[2],
+                            group = intgroup)) +
+                            # ggplot2::aes(x = PC1, y = PC2, group = group, shape = group, colour = group)) +
+               ggplot2::geom_point(ggplot2::aes_string(shape = intgroup,
+                                                       colour = intgroup,
+                                                       fill = intgroup),
+                                   size = 3) +
+               ggplot2::scale_shape_discrete(solid = T) +
+               ggplot2::xlab(paste0("PC1: ", round(pcv[1] *  100), "% variance")) +
+               ggplot2::ylab(paste0(colnames(d)[2], ": ", round(pcv[2] * 100), "% variance")) +
+               ggrepel::geom_text_repel(label = rownames(d),
+                                        colour = "black",
+                                        size = 2,
+                                        fontface = "bold") +
+                                        # ggplot2::annotate("text",x=pca$x[,1], y = pca$x[,2]-0.4, label = colnames(x), cex = 1.6) +
+               ggplot2::ggtitle(paste0("PCA plot using ", colnames(intgroup.df)),
+                                subtitle = paste0(colnames(d)[1], " vs. ", colnames(d)[2]))
       }
-      if(nlevels(group)<=6){
-      ggp <- ggplot2::ggplot(data = d, ggplot2::aes(x = PC1, y = PC2, group = group, shape = group, colour = group)) +
-             ggplot2::geom_point(size = 3) +
-             ggplot2::scale_shape_discrete(solid = T) +
-             ggplot2::xlab(paste0("PC1: ", round(percentVar[1] *  100), "% variance")) +
-             ggplot2::ylab(paste0("PC2: ", round(percentVar[2] * 100), "% variance")) +
-             ggplot2::annotate("text",x=pca$x[,1], y = pca$x[,2]-0.4, label = colnames(x), cex = 1.6) +
-             ggplot2::ggtitle(paste0("PCA plot using ", intgroup))
+      return(ggp)
     }
-    return(ggp)
+
+    ##lapply to make all PC > pc_limit included
+    pcv_u <- percentVar[percentVar > pc_limit/100]
+    ggps <- lapply(2:length(pcv_u), function(f){
+
+        d <- data.frame(PC1 = pca$x[, 1], PC2 = pca$x[, f], intgroup.df, names = colnames(x))
+        colnames(d)[colnames(d) == "PC2"] <- paste0("PC", f)
+        ggp <- pca_plot(d, group, intgroup.df, pcv = percentVar[c(1,f)])
+        return(ggp)
+
+    })
+
+
+    ##scree plot showing contributions of PCs
+    pcv <- data.frame(PC = colnames(pca$x), percent_variance = percentVar)
+    pcv <- pcv[order(pcv$percent_variance, decreasing = TRUE),]
+    levels(pcv$PC) <- pcv$PC
+    ggs <- ggplot2::ggplot(data = pcv, ggplot2::aes(x = PC, y = percent_variance )) +
+           ggplot2::geom_col() +
+           ggplot2::ggtitle("Proprotion of Variances of Principle Components") +
+           ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90))
+
+    ##loading top 5, bottom 5 from 10 top PCs
+    top_10_pc <- pcv[1:10,]
+    top_10_pc$percent_variance <- paste0(round(top_10_pc$percent_variance, digits = 3)*100, "%")
+    pca_rot_10 <- pca$rotation[,top_10_pc$PC]
+    fives_list <- lapply(colnames(pca_rot_10), function(f){
+      fc <- c(tail(sort(pca_rot_10[,f]),5), head(sort(pca_rot_10[,f]),5))
+      nfc <- dplyr::filter(.data = anno_tb, ensembl_gene_id %in% names(fc))
+      names(fc) <- unlist(lapply(names(fc), function(ff){
+        dist_nfc <- dplyr::filter(.data = nfc, ensembl_gene_id %in% ff) %>%
+        dplyr::select(external_gene_name) %>% dplyr::distinct() %>% unlist()
+        paste(dist_nfc, collapse = ",")
+      }))
+      return(data.frame(gene = names(fc), loading = fc, PC = f))
+    })
+
+    loadings_plot <- do.call(rbind,fives_list) %>%
+                     dplyr::left_join(top_10_pc) %>%
+                     dplyr::mutate(PC = paste0(PC, "\n(", percent_variance, ")"))
+
+    ggl <- ggplot2::ggplot(data = loadings_plot,
+                           ggplot2::aes_string(x = "PC", y = "loading", label = "gene")) +
+           ggplot2::geom_point(ggplot2::aes_string(colour = "loading"),
+                               size = 3) +
+           ggplot2::scale_shape_discrete(solid = T) +
+           ggrepel::geom_text_repel(colour = "black",
+                                    size = 2,
+                                    fontface = "bold") +
+           ggplot2::ggtitle("Loadings plot, top 10 PCs by variance, top/bottom 5 genes") +
+           ggplot2::xlab("PC (% variance accounted for)")
+    return(list(ggps, ggs, ggl))
 }
 
 #' Parse information from STAR run to find used GTF file

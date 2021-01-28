@@ -16,7 +16,7 @@ venn_3(master_list, tag, output_dir, padj = 0.01)
 \item{padj}{significance threshold below which to determine significance (adjusted by FDR)}
 }
 \value{
-venn diagram of 3 DE callers
+none, venn diagram of 3 DE callers printed
 }
 \description{
 Make venn diagram

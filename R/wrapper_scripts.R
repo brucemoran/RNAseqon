@@ -37,16 +37,27 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
   ##create required inputs to modules
   count_data <- so_to_raw_counts(sot[[1]])
   tpm_tb <- sot[[1]]$obs_raw_tpm$wide
+
+  ##make log2tpm
+  log2tpm <- dplyr::mutate(.data = tpm_tb, dplyr::across(where(is.numeric), log2))
+
+  ##aggregate ens IDs to get single ext ID for TPM
+  ##NB that ens IDs are unique, but map to multiple ext IDs
+  agg_log2tpm_tb <- agg_log2tpm <- RNAseqR::group_agg_two(log2tpm, pattern = "_gene")
+  agg_log2tpm_df <- as.data.frame(agg_log2tpm_tb)
+  rownames(agg_log2tpm_df) <- agg_log2tpm_df$external_gene_name
+  agg_log2tpm_df <- agg_log2tpm_df[, ! colnames(agg_log2tpm_df) %in% c("external_gene_name", "ensembl_gene_id")]
+  agg_log2tpm_ext_mat <- as.matrix(agg_log2tpm_df)
+
   anno_tb <- tibble::as_tibble(sot[[2]])
   metadata_tb <- RNAseqR::get_metadata(metadata_csv, data_dir)
   outdir <- paste0(output_dir, "/RData")
   dir.create(outdir, recursive = TRUE, showWarnings = FALSE)
-  save(count_data, tpm_tb, anno_tb, metadata_tb, file = paste0(outdir, "/", tag, ".count_tpm_anno_metadata.RData"))
+  save(sot, count_data, anno_tb, tag, tpm_tb, metadata_csv, metadata_design, output_dir, control_reference, agg_log2tpm_tb, agg_log2tpm_ext_mat, anno_tb, metadata_tb, file = paste0(outdir, "/", tag, ".DE_ready.RData"))
 
   ##run modules
   RNAseqR::DESeq2_module(count_data = count_data,
                 anno_tb = anno_tb,
-                tpm_tb = tpm_tb,
                 tag = tag,
                 metadata_csv = metadata_csv,
                 metadata_design = metadata_design,
@@ -55,7 +66,6 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
                 delim_samples = "\\.")
   RNAseqR::edgeR_module(count_data = count_data,
                 anno_tb = anno_tb,
-                tpm_tb = tpm_tb,
                 tag = tag,
                 metadata_csv = metadata_csv,
                 metadata_design = metadata_design,
@@ -64,7 +74,6 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
                 delim_samples = "\\.")
   RNAseqR::limma_module(count_data = count_data,
                 anno_tb = anno_tb,
-                tpm_tb = tpm_tb,
                 tag = tag,
                 metadata_csv = metadata_csv,
                 metadata_design = metadata_design,
@@ -89,25 +98,25 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
   ##run on limma, DESeq2 output per contrast
   fgsea_list_limma_rank_fithree <- lapply(names(master_list[["limma"]]), function(f){
     RNAseqR::fgsea_plot(res = master_list[["limma"]][[f]],
-                       sig_res = fithree[[f]],
-                       msigdb_species = msigdb_species,
-                       msigdb_cat = msigdb_cat,
-                       gene_col = NULL,
-                       padj = 0.01,
-                       output_dir = output_dir,
-                       tag = f,
-                       contrast = f)
+               sig_res = fithree[[f]],
+               msigdb_species = msigdb_species,
+               msigdb_cat = "H",
+               gene_col = NULL,
+               padj = 0.01,
+               output_dir = output_dir,
+               tag = f,
+               contrast = f)
   })
   fgsea_list_deseq2_stat_fithree <- lapply(names(master_list[["DESeq2"]]), function(f){
     RNAseqR::fgsea_plot(res = master_list[["DESeq2"]][[f]],
-                       sig_res = fithree[[f]],
-                       msigdb_species = msigdb_species,
-                       msigdb_cat = msigdb_cat,
-                       gene_col = NULL,
-                       padj = 0.01,
-                       output_dir = output_dir,
-                       tag = f,
-                       contrast = f)
+               sig_res = fithree[[f]],
+               msigdb_species = msigdb_species,
+               msigdb_cat = "H",
+               gene_col = NULL,
+               padj = 0.01,
+               output_dir = output_dir,
+               tag = f,
+               contrast = f)
   })
   names(fgsea_list_limma_rank_fithree) <- names(fgsea_list_deseq2_stat_fithree)<- names(master_list[["limma"]])
 
@@ -117,33 +126,36 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
 
   ##save outputs
   save(master_list, fitwo, fithree,
+       fgsea_list_limma_rank_fithree,
+       fgsea_list_deseq2_stat_fithree,
        fgsea_list_limma_rank_fithree_master,
        fgsea_list_deseq2_stat_fithree_master,
        file = paste0(outdir, "/", tag, ".full_results.RData"))
 
   ##per contrast DE overlap with pathways, and gene sets in lists
-  pc_fgsea_limma_de_list <- per_contrast_fgsea_de(fgsea_list_limma_rank_fithree_master, occupancy = 5)
-  names(pc_fgsea_limma_de_list) <- c("pc_fgsea_limma_de_list", "pc_genesets_limma_de_list")
+  pc_fgsea_limma_de_list <- per_contrast_fgsea_de(fgsea_list_limma_rank_fithree, occupancy = 5)
+  names(pc_fgsea_limma_de_list) <- names(fgsea_list_limma_rank_fithree)
 
   ##use these as input to ssGSEA in GSVA
   ##iterate over contrasts, using DE genesets in each pathway found associated
   ##first set up log2TPM for all genes (NB all master_list[[x]] have same geneset)
-  limma_log2tpm_mat <- dplyr::select(.data = master_list[["limma"]][[1]],
-                                 external_gene_name,
-                                 tidyselect::ends_with("_tpm")) %>%
-                   dplyr::mutate(dplyr::across(is.numeric, log2)) %>%
-                   as.data.frame() %>%
-                   tibble::column_to_rownames("external_gene_name") %>%
-                   as.matrix()
+  total_geneset <- unique(as.vector(unlist(lapply(pc_fgsea_limma_de_list, function(f){
+    return(unlist(f[[2]]))
+  }))))
+  limma_log2tpm_mat <- agg_log2tpm_ext_mat[rownames(agg_log2tpm_ext_mat) %in% total_geneset,]
 
   ##rotation_PCA plots use ssGSEA from genesets specified in pc_fgsea
   ##this is per level of the condition used for contrasts
-  pc_ssgsea_list <- lapply(names(pc_fgsea_limma_de_list[[2]]), function(f){
-                      ssgsea_pca_list <- ssgsea_pca(cont_pways = pc_fgsea_limma_de_list[[2]][[f]],
-                                                    log2tpm_mat = limma_log2tpm_mat,
+  metadata_cov <- rev(gsub(" ", "", strsplit(metadata_design, "\\+")[[1]]))[1]
+  metadata_pca <- dplyr::select(.data = metadata_tb, sample, !!metadata_cov)
+
+  pc_ssgsea_list <- lapply(names(pc_fgsea_limma_de_list), function(f){
+                      ssgsea_pca_list <- ssgsea_pca(pways = pc_fgsea_limma_de_list[[f]][[2]],
+                                                    log2tpm_mat = agg_log2tpm_ext_mat,
                                                     msigdb_cat = "H",
                                                     output_dir = output_dir,
-                                                    hallmark_tb = hallmarks,
-                                                    contrast = f)
+                                                    contrast = f,
+                                                    metadata = metadata_pca)
                     })
+  names(pc_ssgsea_list) <- names(pc_fgsea_limma_de_list)
 }

@@ -12,7 +12,7 @@ found_in_three(master_list, padj = 0.01)
 \item{padj}{significance threshold below which to determine significance (adjusted by FDR)}
 }
 \value{
-tibble of results including unique cols from each module
+per_contrast_list list of tibble of results including unique cols from each module
 }
 \description{
 Found-in-3

@@ -4,7 +4,7 @@
 \alias{BMplotPCA}
 \title{Plotting PCA function}
 \usage{
-BMplotPCA(x, intgroup = NULL, ntop = 1500, returnData = FALSE)
+BMplotPCA(x, intgroup = NULL, ntop = 15000, anno_tb, pc_limit = 10)
 }
 \arguments{
 \item{x}{variance stabilized DESeq2 object}
@@ -13,10 +13,12 @@ BMplotPCA(x, intgroup = NULL, ntop = 1500, returnData = FALSE)
 
 \item{ntop}{top n genes to use by variance}
 
-\item{returnData}{flag to allow data to be returned}
+\item{anno_tb}{tibble of ensembl_gene_id - external_gene_id mappings for annotation}
+
+\item{pc_limit}{integer percent variance accounted by PC for inclusion in plots  (default: 10\%)}
 }
 \value{
-ggp ggplot2 object for printing
+list of ggplot2 objects for printing (PCA, PCs, loadings)
 }
 \description{
 Plotting PCA function

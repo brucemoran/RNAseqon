@@ -1,6 +1,6 @@
-Package: RNAseqR
+Package: RNAseqon
 Title: RNAseq DE Analysis Downstream from Nextflow Pipelines
-Version: 0.0.1
+Version: 0.0.2
 Authors@R:
     person(given = "Bruce",
            family = "Moran",
