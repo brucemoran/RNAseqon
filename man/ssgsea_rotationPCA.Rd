@@ -5,7 +5,7 @@
 \title{Plotting PCA function}
 \usage{
 ssgsea_rotationPCA(
-  x,
+  ssgsea,
   metadata,
   hallmark_tb = NULL,
   contrast,
@@ -13,6 +13,8 @@ ssgsea_rotationPCA(
 )
 }
 \arguments{
+\item{ssgsea}{output table}
+
 \item{metadata}{tibble of sample, \<group\> where group colours the PCA}
 
 \item{hallmark_tb}{hallmark data with Process_Category column to colour by process}
@@ -20,8 +22,6 @@ ssgsea_rotationPCA(
 \item{contrast}{string to title plot}
 
 \item{returnData}{flag to allow data to be returned}
-
-\item{ssgsea}{output table}
 }
 \value{
 ggp_pca_list ggplot2 object for printing, pca for safe keeping

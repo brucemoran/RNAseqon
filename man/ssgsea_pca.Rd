@@ -16,6 +16,8 @@ ssgsea_pca(
 \arguments{
 \item{pways}{list of pathway genesets to use in ssGSEA}
 
+\item{log2tpm_mat}{matrix of log2tpm values per sample across genes in gene lists}
+
 \item{msigdb_cat}{one of 'c("H", paste0("C", c(1:7)))', see: gsea-msigdb.org/gsea/msigdb/collections.jsp; if H, loads Process_Category data from Liberzon 2015 paper to colour PCA}
 
 \item{output_dir}{path to where output goes}
@@ -23,8 +25,6 @@ ssgsea_pca(
 \item{contrast}{string used to prefix output naming the contrast being investigated}
 
 \item{metadata}{tibble of sample, \<group\> where group colours the PCA}
-
-\item{log2tpm_tb}{tibble of log2tpm values per sample across genes in gene lists}
 }
 \value{
 ssgsea_ggp_list results table of each geneset and sample
