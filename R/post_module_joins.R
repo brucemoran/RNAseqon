@@ -49,7 +49,7 @@ master_parse_join <- function(input_dir, tpm_tb = NULL){
   })
 
   ##list within names of significant results (p < 0.01)
-  master_list_sig <- lapply(master_list, function(f){
+  master_list_sig <- lapply(master_list_a, function(f){
     ff <- dplyr:::filter(.data = f[[1]], padj < 0.01)
 
     ##add TPM to genes
