@@ -3,11 +3,12 @@
 #' Master list, join to give found-in-2 and all-3 tables
 #'
 #' @param input_dir path where DESeq2, limma, edgeR RDS results files are held
+#' @param tpm_tb tpm tibble for adding to master_ist_sig ([[x]][[2]])
 #' @return list object of 'found-in-2' and 'all-3' results, including unique cols from each module
 #' @importFrom magrittr '%>%'
 #' @export
 
-master_parse_join <- function(input_dir){
+master_parse_join <- function(input_dir, tpm_tb = NULL){
 
   print("Running: master_parse_join()")
 
@@ -46,12 +47,28 @@ master_parse_join <- function(input_dir){
     })
     return(mlist)
   })
+
+  ##list within names of significant results (p < 0.01)
+  master_list_sig <- lapply(master_list, function(f){
+    ff <- dplyr:::filter(.data = f[[1]], padj < 0.01)
+
+    ##add TPM to genes
+    if(!is.null(tpm_tb)){
+
+      ff <- dplyr::left_join(ff, tpm_tb) %>%
+            dplyr::arrange(external_gene_name)
+    }
+    return(ff)
+  })
+  names(master_list_sig) <- names(master_list_a)
+  save(master_list_sig, file = paste0(input_dir, "/", tag, ".master_list_sig.RData"))
+
   return(master_list_a)
 }
 
-#' Aggregate 3, 4 columns based on grouping on 1, 2 columns
-#' NB that table can have multiple annotations in RNAseqR based on contrasts
-#' this function removes the 'per-caller'
+#' Aggregate columns 3, 4 based on grouping on columns 1, 2
+#' NB that table can have multiple annotations in RNAseqon based on contrasts
+#' this function removes this 'per-caller'
 #'
 #' @param f table object with colnames specified in colns
 #' @param colns colnames of f on which to aggregate
@@ -71,21 +88,15 @@ group_agg_multi <- function(f, colns = NULL, pattern = NULL){
   }
 
   agg_f <- f %>% dplyr:::rowwise() %>%
-         dplyr::group_by(!!as.symbol(colns[1]), !!as.symbol(colns[2])) %>%
-         dplyr::mutate("agg_col3" = paste0(!!as.symbol(colns[3]), collapse=",")) %>%
-         dplyr::mutate("agg_col4" = paste0(!!as.symbol(colns[4]), collapse=",")) %>%
-         dplyr::ungroup() %>%
-         dplyr::select(-!!colns[3], -!!colns[4]) %>%
-         dplyr::rename(!!colns[3] := agg_col3, !!colns[4] := agg_col4) %>%
-         dplyr::select(tidyselect::all_of(colns), dplyr::everything()) %>%
-         dplyr::distinct(ensembl_gene_id, .keep_all = TRUE)
+                 dplyr::distinct(dplyr::across(-!!as.symbol(colns[3])), .keep_all = TRUE) %>%
+                 dplyr::ungroup()
   return(agg_f)
 }
 
-#' Aggregate 1 columns based on grouping on 2 column
+#' Aggregate column 1 based on grouping by column 2
 #'
 #' @param f table object with colnames specified in colns
-#' @param colns colnames of f on which to aggregate
+#' @param colns colnames of f on which to aggregate, group in that order!
 #' @param pattern string to grep for colnames on which to operate
 #' @return agg_f aggregated gene ID, names table
 #' @importFrom magrittr '%>%'
@@ -102,13 +113,8 @@ group_agg_two <- function(f, colns = NULL, pattern = NULL){
   }
 
   agg_f <- f %>% dplyr:::rowwise() %>%
-        dplyr::group_by(!!as.symbol(colns[2])) %>%
-        dplyr::mutate("agg_col1" = paste0(!!as.symbol(colns[1]), collapse=",")) %>%
-        dplyr::ungroup() %>%
-        dplyr::select(-!!colns[1]) %>%
-        dplyr::rename(!!colns[1] := agg_col1) %>%
-        dplyr::select(tidyselect::all_of(colns), dplyr::everything()) %>%
-        dplyr::distinct(ensembl_gene_id, .keep_all = TRUE)
+                 dplyr::distinct(dplyr::across(-!!as.symbol(colns[1])), .keep_all = TRUE) %>%
+                 dplyr::ungroup()
   return(agg_f)
 }
 
