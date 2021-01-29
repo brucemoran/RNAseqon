@@ -25,12 +25,12 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
 
   ##create an output called RNAseqR in current dir if no output_dir defined
   if(is.null(output_dir)){
-    output_dir <- paste0(getwd(), "/", tag, "/RNAseqR")
+    output_dir <- paste0(getwd(), "/", tag, "/RNAseqon")
     dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   }
 
   ##prepare data and save
-  sot <- RNASeqon::brucemoran_rnaseq_kallisto_parser(metadata_csv,
+  sot <- RNAseqon::brucemoran_rnaseq_kallisto_parser(metadata_csv,
                                            data_dir = data_dir,
                                            genome_prefix = genome_prefix)
 
@@ -43,20 +43,20 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
 
   ##aggregate ens IDs to get single ext ID for TPM
   ##NB that ens IDs are unique, but map to multiple ext IDs
-  agg_log2tpm_tb <- agg_log2tpm <- RNASeqon::group_agg_two(log2tpm, pattern = "_gene")
+  agg_log2tpm_tb <- agg_log2tpm <- RNAseqon::group_agg_two(log2tpm, pattern = "_gene")
   agg_log2tpm_df <- as.data.frame(agg_log2tpm_tb)
   rownames(agg_log2tpm_df) <- agg_log2tpm_df$external_gene_name
   agg_log2tpm_df <- agg_log2tpm_df[, ! colnames(agg_log2tpm_df) %in% c("external_gene_name", "ensembl_gene_id")]
   agg_log2tpm_ext_mat <- as.matrix(agg_log2tpm_df)
 
   anno_tb <- tibble::as_tibble(sot[[2]])
-  metadata_tb <- RNASeqon::get_metadata(metadata_csv, data_dir)
+  metadata_tb <- RNAseqon::get_metadata(metadata_csv, data_dir)
   outdir <- paste0(output_dir, "/RData")
   dir.create(outdir, recursive = TRUE, showWarnings = FALSE)
   save(sot, count_data, anno_tb, tag, tpm_tb, metadata_csv, metadata_design, output_dir, control_reference, agg_log2tpm_tb, agg_log2tpm_ext_mat, anno_tb, metadata_tb, file = paste0(outdir, "/", tag, ".DE_ready.RData"))
 
   ##run modules
-  RNASeqon::DESeq2_module(count_data = count_data,
+  RNAseqon::DESeq2_module(count_data = count_data,
                 anno_tb = anno_tb,
                 tag = tag,
                 metadata_csv = metadata_csv,
@@ -64,7 +64,7 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
                 output_dir = output_dir,
                 control_reference = control_reference,
                 delim_samples = "\\.")
-  RNASeqon::edgeR_module(count_data = count_data,
+  RNAseqon::edgeR_module(count_data = count_data,
                 anno_tb = anno_tb,
                 tag = tag,
                 metadata_csv = metadata_csv,
@@ -72,7 +72,7 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
                 output_dir = output_dir,
                 control_reference = control_reference,
                 delim_samples = "\\.")
-  RNASeqon::limma_module(count_data = count_data,
+  RNAseqon::limma_module(count_data = count_data,
                 anno_tb = anno_tb,
                 tag = tag,
                 metadata_csv = metadata_csv,
@@ -83,21 +83,21 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
                 run_voom = TRUE)
 
   ##create master list from module RDS files
-  master_list <- RNASeqon::master_parse_join(input_dir = output_dir)
+  master_list <- RNAseqon::master_parse_join(input_dir = output_dir)
 
   ##find overlaps
-  fitwo <- RNASeqon::found_in_two(master_list)
-  fithree <- RNASeqon::found_in_three(master_list)
+  fitwo <- RNAseqon::found_in_two(master_list)
+  fithree <- RNAseqon::found_in_three(master_list)
 
   ##Venn results WIP
-  RNASeqon::venn_3(master_list = master_list,
+  RNAseqon::venn_3(master_list = master_list,
                   tag = tag,
                   output_dir = output_dir)
 
   ##fgsea
   ##run on limma, DESeq2 output per contrast
   fgsea_list_limma_rank_fithree <- lapply(names(master_list[["limma"]]), function(f){
-    RNASeqon::fgsea_plot(res = master_list[["limma"]][[f]],
+    RNAseqon::fgsea_plot(res = master_list[["limma"]][[f]],
                sig_res = fithree[[f]],
                msigdb_species = msigdb_species,
                msigdb_cat = "H",
@@ -108,7 +108,7 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
                contrast = f)
   })
   fgsea_list_deseq2_stat_fithree <- lapply(names(master_list[["DESeq2"]]), function(f){
-    RNASeqon::fgsea_plot(res = master_list[["DESeq2"]][[f]],
+    RNAseqon::fgsea_plot(res = master_list[["DESeq2"]][[f]],
                sig_res = fithree[[f]],
                msigdb_species = msigdb_species,
                msigdb_cat = "H",

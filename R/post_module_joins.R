@@ -208,9 +208,9 @@ venn_3 <- function(master_list, tag, output_dir, padj = 0.01){
 
   ##run over master_list to get number of overlapped genes
   print("Working on found-in-two")
-  fitwo <- suppressMessages(RNASeqon::found_in_two(master_list))
+  fitwo <- suppressMessages(RNAseqon::found_in_two(master_list))
   print("Working on found-in-three")
-  fithree <- suppressMessages(RNASeqon::found_in_three(master_list))
+  fithree <- suppressMessages(RNAseqon::found_in_three(master_list))
 
   ##each master_list for contrast
   unc <- unique(t(combn(x = c(0,0,0,1,1,1,0,0,0,1,1,1), m = 3)))

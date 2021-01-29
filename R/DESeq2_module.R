@@ -238,11 +238,11 @@ BMplotPCA <- function(x, intgroup = NULL, ntop = 15000, anno_tb, pc_limit = 10) 
            ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90))
 
     ##loading top 5, bottom 5 from 10 top PCs
-    top_10_pc <- pcv[1:10,]
-    top_10_pc$percent_variance <- paste0(round(top_10_pc$percent_variance, digits = 3)*100, "%")
-    pca_rot_10 <- pca$rotation[,top_10_pc$PC]
-    fives_list <- lapply(colnames(pca_rot_10), function(f){
-      fc <- c(tail(sort(pca_rot_10[,f]),5), head(sort(pca_rot_10[,f]),5))
+    top_pc <- pcv[1:10,][!is.na(pcv[1:10, "PC"]),]
+    top_pc$percent_variance <- paste0(round(top_pc$percent_variance, digits = 3)*100, "%")
+    pca_rot <- pca$rotation[,top_pc$PC]
+    fives_list <- lapply(colnames(pca_rot), function(f){
+      fc <- c(tail(sort(pca_rot[,f]),5), head(sort(pca_rot[,f]),5))
       nfc <- dplyr::filter(.data = anno_tb, ensembl_gene_id %in% names(fc))
       names(fc) <- unlist(lapply(names(fc), function(ff){
         dist_nfc <- dplyr::filter(.data = nfc, ensembl_gene_id %in% ff) %>%
