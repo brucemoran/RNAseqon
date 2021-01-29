@@ -25,7 +25,7 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
 
   ##create an output called RNAseqR in current dir if no output_dir defined
   if(is.null(output_dir)){
-    output_dir <- paste0(getwd(), "/", tag, "/RNAseqR")
+    output_dir <- paste0(getwd(), "/", tag, "/RNAseqon")
     dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   }
 
