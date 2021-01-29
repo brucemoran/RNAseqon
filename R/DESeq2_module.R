@@ -253,7 +253,7 @@ BMplotPCA <- function(x, intgroup = NULL, ntop = 15000, anno_tb, pc_limit = 10) 
     })
 
     loadings_plot <- do.call(rbind,fives_list) %>%
-                     dplyr::left_join(top_10_pc) %>%
+                     dplyr::left_join(top_pc) %>%
                      dplyr::mutate(PC = paste0(PC, "\n(", percent_variance, ")"))
 
     ggl <- ggplot2::ggplot(data = loadings_plot,
