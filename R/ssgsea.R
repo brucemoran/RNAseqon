@@ -59,10 +59,11 @@ ssgsea_pca <- function(pways, log2tpm_mat, msigdb_cat = "H", output_dir, contras
 #' @param metadata tibble of sample, \<group\> where group colours the PCA
 #' @param contrast string to title plot
 #' @param returnData flag to allow data to be returned
+#' @param intgroup colname to use as group to colour in if not using Process Category
 #' @return ggp_pca_list ggplot2 object for printing, pca for safe keeping
 #' @export
 
-ssgsea_rotationPCA <- function(ssgsea, metadata, hallmark_tb = NULL, contrast, returnData = FALSE) {
+ssgsea_rotationPCA <- function(ssgsea, metadata, hallmark_tb = NULL, contrast, returnData = FALSE, group = NULL) {
 
     pca <- prcomp(t(ssgsea))
     percentVar <- pca$sdev^2/sum(pca$sdev^2)
@@ -121,13 +122,12 @@ ssgsea_rotationPCA <- function(ssgsea, metadata, hallmark_tb = NULL, contrast, r
 
     } else {
       stop("Unfinished, suggest using Hallmarks...")
-      # ggp <- ggplot2::ggplot(data = d, ggplot2::aes(x = PC1, y = PC2, group = intgroup, shape = intgroup, colour = intgroup)) +
-      #        ggplot2::geom_point(size = 3) +
-      #        ggplot2::scale_shape_discrete(solid = T) +
-      #        ggplot2::xlab(paste0("PC1: ", round(percentVar[1] *  100), "% variance")) +
-      #        ggplot2::ylab(paste0("PC2: ", round(percentVar[2] * 100), "% variance")) +
-      #        ggplot2::annotate("text",x=pca$x[,1], y = pca$x[,2]-0.4, label = colnames(x), cex = 1.6) +
-      #        ggplot2::ggtitle(paste0("PCA plot using ", intgroup))
+      ggp <- ggplot2::ggplot(data = p,
+                             ggplot2::aes(x = PC1, y = PC2, group = intgroup)) +
+             ggplot2::geom_point(ggplot2::aes_string(shape = intgroup,
+                                                    colour = intgroup,
+                                                    fill = intgroup),
+                                 size = 3)
     }
     ggp_pca_list <- list(ggplot = ggp, pca = pca)
     return(ggp_pca_list)

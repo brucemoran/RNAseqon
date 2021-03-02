@@ -2,9 +2,9 @@
 % Please edit documentation in R/post_module_joins.R
 \name{group_agg_multi}
 \alias{group_agg_multi}
-\title{Aggregate 3, 4 columns based on grouping on 1, 2 columns
-NB that table can have multiple annotations in RNAseqR based on contrasts
-this function removes the 'per-caller'}
+\title{Aggregate columns 3, 4 based on grouping on columns 1, 2
+NB that table can have multiple annotations in RNAseqon based on contrasts
+this function removes this 'per-caller'}
 \usage{
 group_agg_multi(f, colns = NULL, pattern = NULL)
 }
@@ -19,7 +19,7 @@ group_agg_multi(f, colns = NULL, pattern = NULL)
 agg_f aggregated gene ID, names table
 }
 \description{
-Aggregate 3, 4 columns based on grouping on 1, 2 columns
-NB that table can have multiple annotations in RNAseqR based on contrasts
-this function removes the 'per-caller'
+Aggregate columns 3, 4 based on grouping on columns 1, 2
+NB that table can have multiple annotations in RNAseqon based on contrasts
+this function removes this 'per-caller'
 }
