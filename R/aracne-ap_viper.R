@@ -10,42 +10,20 @@
 #'                 sample group
 #'                 all other lines:
 #'                 sampleID_1 group_0 etc.
-#' @param ENS_DATASET biomaRt::useEnsembl(dataset = this) default: human
+#' @param genome_prefix string of a genome in biomart$dataset, suffixed with
+#'                      '_gene_ensembl'
 #' @param TAG string identifier of the run
 #' @return none, saves two RData files to current dir contianing:
 #'         ensembl to external gene mapping (en2ext);
 #'         combined.eset, regulonaracne required to run msViper
 #' @export
 
-parse_aracne <- function(NETWORK, EXPRMAT, METADATA, TAG, ENS_DATASET = "hsapiens_gene_ensembl"){
+parse_aracne <- function(NETWORK, EXPRMAT, METADATA, TAG, genome_prefix = "hsapiens"){
 
   ##process annotation data
-  if(!file.exists("ens2ext.RData")){
-    print("Annotating with biomaRt...")
-    hmart <- biomaRt::useEnsembl(biomart = "ensembl",
-                                 dataset = ENS_DATASET)
+  tx2gene <- RNAseqon::get_tx2gene(genome_prefix)
 
-    get_mart <- function(ENS_DATASET) {
-      biomaRt::useEnsembl(biomart = "ensembl", dataset = ENS_DATASET)
-    }
-
-    hmart <- NULL
-    attempt <- 1
-    while( is.null(hmart) && attempt <= 200 ) {
-      attempt <- attempt + 1
-      try(
-        hmart <- get_mart(ENS_DATASET)
-      )
-    }
-    print(paste0("Getting mart succeeded on attempt: ", attempt, ""))
-    ens2ext <- tibble::as_tibble(biomaRt::getBM(attributes = c('ensembl_gene_id', 'external_gene_name'), mart = hmart))
-
-    save(ens2ext, file="ens2ext.RData")
-  } else {
-    print("Loading annotations from biomaRt...")
-    load("ens2ext.RData")
-  }
-
+  ##ARACNe regulon
   print("ARACNe-AP to regulon...")
   regulonaracne <- suppressWarnings(viper::aracne2regulon(afile = NETWORK,
                                                           eset = EXPRMAT))
@@ -55,7 +33,9 @@ parse_aracne <- function(NETWORK, EXPRMAT, METADATA, TAG, ENS_DATASET = "hsapien
   exprd <- readr::read_tsv(EXPRMAT)
 
   ##check geneID as exernal_gene_name, then convert to ensembl_gene_id
-  exprdg <- dplyr::left_join(ens2ext, exprd)
+  exprdg <- dplyr::left_join(tx2gene, exprd) %>%
+            dplyr::select(external_gene_name, ensembl_gene_id, where(is.numeric))
+
   exprdh <- highest_exp_wides(wide_object = exprdg,
                              name_col = "external_gene_name",
                              id_col = "ensembl_gene_id",
@@ -88,7 +68,7 @@ parse_aracne <- function(NETWORK, EXPRMAT, METADATA, TAG, ENS_DATASET = "hsapien
   combined.eset <- Biobase::ExpressionSet(assayData = as.matrix(exprds),
                                           phenoData = pData)
   print("Saving...")
-  save(combined.eset, phenos, pData, exprds, exprdh, regulonaracne, file = paste0(TAG,".parse_inputs.RData"))
+  save(combined.eset, tx2gene, phenos, exprds, exprdh, regulonaracne, file = paste0(TAG,".parse_inputs.RData"))
 }
 
 #' Run msViper
@@ -112,7 +92,7 @@ run_msviper <- function(TAG, RDATA){
     print(paste0("Working on: ", level1))
 
     ##require 10+ samples in Group
-    if(table(phenos$description %in% level1)[2] > 10){
+    if(table(phenos$description %in% level1)[2] > 7){
       pairname <- paste0(gsub(" ","-",level1), "_vs_rest")
       signature <- viper::rowTtest(combined.eset, "description", level1)
       rownamesp <- rownames(signature$p.value)
@@ -254,11 +234,13 @@ highest_exp_wides <- function(wide_object, name_col, id_col, value_cols){
                               dplyr::ungroup() %>%
                               dplyr::distinct_at(dplyr::vars(-id_col), .keep_all = TRUE) %>%
                               dplyr::select(-n, -mean_value)
+
   ##remove those with multi mapping (in mean_map) from original input
-  mean_map_o <- dplyr::anti_join(wide_object, mean_map, by = name_col)
+  #mean_map_o <- dplyr::anti_join(wide_object, mean_map, by = name_col) %>%
 
   ##return the two sets, bound
-  dplyr::bind_rows(mean_map_o, mean_map)
+  #dplyr::bind_rows(mean_map_o, mean_map)
+  return(mean_map)
 }
 
 #' Make required inputs for ARACNe-AP which is now supported through RNAseqon
