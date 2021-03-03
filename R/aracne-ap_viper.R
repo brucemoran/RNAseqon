@@ -246,13 +246,13 @@ highest_exp_wides <- function(wide_object, name_col, id_col, value_cols){
   ##filter out all with name_col single mapping
   mean_map <- wide_object %>% dplyr::select(name_col, id_col, value_cols) %>%
                               dplyr::mutate(mean_value = rowMeans(.[value_cols])) %>%
-                              dplyr::group_by_at(vars(name_col)) %>%
+                              dplyr::group_by_at(dplyr::vars(name_col)) %>%
                               na.omit(mean_value) %>%
                               dplyr::add_count()%>%
                               dplyr::filter(n > 1) %>%
                               dplyr::filter(mean_value == max(mean_value)) %>%
                               dplyr::ungroup() %>%
-                              dplyr::distinct_at(vars(-id_col), .keep_all = TRUE) %>%
+                              dplyr::distinct_at(dplyr::vars(-id_col), .keep_all = TRUE) %>%
                               dplyr::select(-n, -mean_value)
   ##remove those with multi mapping (in mean_map) from original input
   mean_map_o <- dplyr::anti_join(wide_object, mean_map, by = name_col)
