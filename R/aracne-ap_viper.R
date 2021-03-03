@@ -105,14 +105,14 @@ run_msviper <- function(TAG, RDATA){
   load(RDATA)
 
   ##generate signature for pairwise description levels
-  LEVELS <- levels(pData$description)
+  LEVELS <- levels(factor(phenos$description))
   lapply(seq_along(LEVELS), function(f){
 
     level1 <- LEVELS[f]
     print(paste0("Working on: ", level1))
 
     ##require 10+ samples in Group
-    if(table(pData$description %in% level1)[2] > 20){
+    if(table(phenos$description %in% level1)[2] > 10){
       pairname <- paste0(gsub(" ","-",level1), "_vs_rest")
       signature <- viper::rowTtest(combined.eset, "description", level1)
       rownamesp <- rownames(signature$p.value)
