@@ -38,7 +38,7 @@ ssgsea_pca <- function(pways, log2tpm_mat, msigdb_cat = "H", output_dir, contras
                              max.sz=1000,
                              ssgsea.norm=T)
 
-    ggp <- ssgsea_rotationPCA(x = ssgsea_res,
+    ggp <- ssgsea_rotationPCA(ssgsea = ssgsea_res,
                               hallmark_tb = hallmarks,
                               contrast = contrast,
                               metadata = metadata,

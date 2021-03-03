@@ -24,7 +24,7 @@ parse_aracne <- function(NETWORK, EXPRMAT, METADATA, TAG, ENS_DATASET = "hsapien
     print("Annotating with biomaRt...")
     hmart <- biomaRt::useEnsembl(biomart = "ensembl",
                                  dataset = ENS_DATASET)
-    ens2ext <- as_tibble(biomaRt::getBM(attributes=c('ensembl_gene_id', 'external_gene_name'),
+    ens2ext <- tibble::as_tibble(biomaRt::getBM(attributes=c('ensembl_gene_id', 'external_gene_name'),
                                         mart = hmart))
 
     save(ens2ext, file="ens2ext.RData")
@@ -66,7 +66,7 @@ parse_aracne <- function(NETWORK, EXPRMAT, METADATA, TAG, ENS_DATASET = "hsapien
   exprds <- exprdh %>%
             dplyr::select(-external_gene_name) %>%
             as.data.frame() %>%
-            column_to_rownames(., var = "ensembl_gene_id")
+            dplyr::column_to_rownames(., var = "ensembl_gene_id")
   phenos <- phenodf[phenodf$sampleID %in% colnames(exprds),]
   print("Creating ExpressionSet...")
   pData <- new("AnnotatedDataFrame",
