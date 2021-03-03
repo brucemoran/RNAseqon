@@ -158,4 +158,9 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
                                                     metadata = metadata_pca)
                     })
   names(pc_ssgsea_list) <- names(pc_fgsea_limma_de_list)
+
+  ##aracne inputs
+  design_vec <- unlist(lapply(metadata_design, function(f){gsub(" ", "", strsplit(f, "\\+")[[1]])}))
+  CONDITION <- rev(design_vec)[1]
+  make_aracne_inputs(tpm_tb, metadata = metadata_tb, meta_group = CONDITION, tag = tag)
 }
