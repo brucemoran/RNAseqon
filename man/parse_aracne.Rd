@@ -4,13 +4,7 @@
 \alias{parse_aracne}
 \title{Parse inputs (from aracne-ap_viper Nextflow)}
 \usage{
-parse_aracne(
-  NETWORK,
-  EXPRMAT,
-  METADATA,
-  TAG,
-  ENS_DATASET = "hsapiens_gene_ensembl"
-)
+parse_aracne(NETWORK, EXPRMAT, METADATA, TAG, genome_prefix = "hsapiens")
 }
 \arguments{
 \item{NETWORK}{ARACNe_AP network file}
@@ -29,7 +23,8 @@ sampleID_1 group_0 etc.}
 
 \item{TAG}{string identifier of the run}
 
-\item{ENS_DATASET}{biomaRt::useEnsembl(dataset = this) default: human}
+\item{genome_prefix}{string of a genome in biomart$dataset, suffixed with
+'_gene_ensembl'}
 }
 \value{
 none, saves two RData files to current dir contianing:
