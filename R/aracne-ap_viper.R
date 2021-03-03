@@ -24,8 +24,21 @@ parse_aracne <- function(NETWORK, EXPRMAT, METADATA, TAG, ENS_DATASET = "hsapien
     print("Annotating with biomaRt...")
     hmart <- biomaRt::useEnsembl(biomart = "ensembl",
                                  dataset = ENS_DATASET)
-    ens2ext <- tibble::as_tibble(biomaRt::getBM(attributes=c('ensembl_gene_id', 'external_gene_name'),
-                                        mart = hmart))
+
+    get_mart <- function(ENS_DATASET) {
+      biomaRt::useEnsembl(biomart = "ensembl", dataset = ENS_DATASET)
+    }
+
+    hmart <- NULL
+    attempt <- 1
+    while( is.null(hmart) && attempt <= 200 ) {
+      attempt <- attempt + 1
+      try(
+        hmart <- get_mart(ENS_DATASET)
+      )
+    }
+    print(paste0("Getting mart succeeded on attempt: ", attempt, ""))
+    ens2ext <- tibble::as_tibble(biomaRt::getBM(attributes = c('ensembl_gene_id', 'external_gene_name'), mart = hmart))
 
     save(ens2ext, file="ens2ext.RData")
   } else {
