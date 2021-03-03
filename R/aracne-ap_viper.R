@@ -79,7 +79,7 @@ parse_aracne <- function(NETWORK, EXPRMAT, METADATA, TAG, ENS_DATASET = "hsapien
   exprds <- exprdh %>%
             dplyr::select(-external_gene_name) %>%
             as.data.frame() %>%
-            dplyr::column_to_rownames(., var = "ensembl_gene_id")
+            tibble::column_to_rownames(., var = "ensembl_gene_id")
   phenos <- phenodf[phenodf$sampleID %in% colnames(exprds),]
   print("Creating ExpressionSet...")
   pData <- new("AnnotatedDataFrame",
