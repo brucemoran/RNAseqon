@@ -2,7 +2,6 @@
 #'
 #' @param res output table from 'DESeq2_module()' (all genes not just sig)
 #' @param sig_res output table from 'DESeq2/limma/edger_module()' or combination thereof (used for table output)
-#' @param gene_set genes of interest for fgsea (subset to these, use all if not specified)
 #' @param msigdb_species one of msigdbr::msigdbr_show_species(), default:"Homo sapiens"
 #' @param msigdb_cat one of 'c("H", paste0("C", c(1:7)))', see: gsea-msigdb.org/gsea/msigdb/collections.jsp
 #' @param gene_col the name of the column in tibble with gene names found in pathways, set to "rownames" if they are the rownames (default)
@@ -79,15 +78,8 @@ fgsea_plot <- function(res, sig_res = NULL, msigdb_species = "Homo sapiens", msi
               dplyr::summarize(rank = mean(!!as.symbol(rank_col)))
   rank_vec <- tibble::deframe(res_rank)
 
-  ##MsigDB pathways
-  msigdb_pathway <- msigdbr::msigdbr(species = msigdb_species, category = msigdb_cat)
-
-  ##create list
-  msigdb_pathlist <- lapply(unique(msigdb_pathway$gs_name), function(f){
-    fsig <- dplyr::filter(.data = msigdb_pathway, gs_name %in% !!f)
-    return(as.vector(unlist(dplyr::select(.data = fsig, gene_symbol))))
-  })
-  names(msigdb_pathlist) <- unique(msigdb_pathway$gs_name)
+  ##MsigDB pathways genelists
+  msigdb_pathlist <- msigdb_pathways_to_list(msigdb_species, msigdb_cat)
 
   ##run, order fgsea
   fgsea_res <- fgsea::fgsea(pathways = msigdb_pathlist,
@@ -103,13 +95,7 @@ fgsea_plot <- function(res, sig_res = NULL, msigdb_species = "Homo sapiens", msi
   fgsea_res_sig_tb <- dplyr::arrange(.data = fgsea_res_sig_tb, desc(NES))
 
   ##plotting
-  gg_fgsea <- ggplot2::ggplot(fgsea_res_sig_tb, ggplot2::aes(reorder(pathway, NES), NES)) +
-              ggplot2::geom_col(ggplot2::aes(fill = padj)) +
-              ggplot2::coord_flip() +
-              ggplot2::labs(x = "Pathway",
-                            y = "Normalized Enrichment Score",
-                            title = paste0(msigdb_cat, "MsigDB pathways NES")) +
-              ggplot2::theme_minimal()
+  gg_fgsea <- fgsea_plot(fgsea_res_tb = fgsea_res_sig_tb, msigdb_cat = msigdb_cat)
   ggplot2::ggsave(gg_fgsea, file = paste0(out_dir, "/plots/", tag , ".fgsea_sig.ggplot2.pdf"))
 
   ##output results per gene
@@ -172,69 +158,42 @@ per_contrast_fgsea_de <- function(fgsea_contrast_list, occupancy = 5, output_dir
 }
 
 
-# ##run fgsea on each MR set individually, returning list same length as MRs, table of FGSEA
-# fgseamsViperIndiv <- function(mrs, mrsstat, pathway, qval, TAG, OUTDIR, gene_col=NULL) {
-#
-#   ##mrs is output from msViper, with an es object with specified mrstat as name
-#   ##mrsstat is statistic used to rank data, comes from msViper
-#   ##pathway is pathway (from MSigDB in GMT format if *gmt, else named list)
-#   ##qval is the adjusted p value for all results herein
-#   ##gene_col is the name of the column in tibble with gene names found in pathways
-#
-#   if(is.null(gene_col)){
-#     gene_col <- "external_gene_name"
-#   }
-#
-#   if(is.null(geneset)){
-#     geneset <- names(mrs$es[[mrsstat]])
-#   }
-#
-#   if(length(grep(".gmt$", pathway, perl=TRUE))==1){
-#     pathways_msig <- gmtPathways(pathway)
-#   }
-#
-#   ##create ranks
-#   ranks <- as_tibble(data.frame(stat=mrs$es[[mrsstat]]), rownames="external_gene_name") %>%
-#            dplyr::filter(external_gene_name %in% geneset) %>%
-#            dplyr::select(gene_col, stat) %>%
-#            na.omit() %>%
-#            tibble::deframe()
-#
-#   ##run, order fgsea
-#   fgsea_res <- fgsea(pathways=pathways_msig, stats=ranks, nperm=1000000)
-#   fgsea_res_le <- fgsea_res[lapply(fgsea_res$leadingEdge,length)>25,]
-#   fgsea_resTidy <- as_tibble(fgsea_res_le) %>%
-#                   dplyr::mutate(FDR = p.adjust(pval,method="BH")) %>%
-#                   dplyr::filter(padj < 0.1) %>%
-#                   dplyr::arrange(desc(NES))
-#
-#   ##
-#   pathways_msig.DEsig.absFC2 <- pathways_msig %>% enframe("pathway", gene_col) %>%
-#                     unnest() %>%
-#                     inner_join(DESeqResults.t, by=gene_col) %>%
-#                     dplyr::mutate(absFC = logratio2foldchange(log2FoldChange)) %>%
-#                     dplyr::filter(padj < qval) %>%
-#                     dplyr::filter(abs(absFC) > 2) %>%
-#                     left_join(., fgsea_resTidy, by="pathway") %>%
-#                     dplyr::select(pathway, gene_col, padj.y, NES, padj.x, absFC) %>%
-#                     dplyr::rename(padj_pathway = "padj.y", padj_gene = "padj.x") %>%
-#                     dplyr::arrange(NES)
-#
-#   ##plot
-#   pathways_msig.DEsig.absFC2.plt <- pathways_msig.DEsig.absFC2 %>%
-#                                     dplyr::select(pathway, NES, padj_pathway) %>%
-#                                     dplyr::rename(padj = "padj_pathway") %>%
-#                                     dplyr::filter(padj < qval) %>%
-#                                     distinct()
-#
-#   ggplot(pathways_msig.DEsig.absFC2.plt, ggplot2::aes(reorder(pathway, NES), NES)) +
-#     geom_col(ggplot2::aes(fill=padj<qval)) +
-#     coord_flip() +
-#     labs(x="Pathway", y="Normalized Enrichment Score",
-#          title=paste0(TAG, " pathways NES from GSEA")) +
-#     theme_minimal() +
-#     theme(axis.text.y=element_text(size=5))
-#   ggsave(paste0(OUTDIR, "/fgseaDESeq.", TAG, ".sig.absFC2.plt.pdf"))
-#
-#   return(pathways_msig.DEsig.absFC2)
-# }
+#' msigdb pathways in a nice list
+#'
+#' @param msigdb_species one of msigdbr::msigdbr_show_species()
+#' @param msigdb_cat one of 'c("H", paste0("C", c(1:7)))',
+#'        see: gsea-msigdb.org/gsea/msigdb/collections.jsp
+#' @return msigdb_pathlist list object
+#' @export
+
+msigdb_pathways_to_list <- function(msigdb_species, msigdb_cat){
+
+  msigdb_pathway <- msigdbr::msigdbr(species = msigdb_species, category = msigdb_cat)
+
+  ##create list
+  msigdb_pathlist <- lapply(unique(msigdb_pathway$gs_name), function(f){
+    fsig <- dplyr::filter(.data = msigdb_pathway, gs_name %in% !!f)
+    return(as.vector(unlist(dplyr::select(.data = fsig, gene_symbol))))
+  })
+  names(msigdb_pathlist) <- unique(msigdb_pathway$gs_name)
+  return(msigdb_pathlist)
+}
+
+#' fgsea plotting
+#'
+#' @param fgsea_res_tb tibble of results from fgsea::fgsea
+#' @param msigdb_cat one of 'c("H", paste0("C", c(1:7)))',
+#'        see: gsea-msigdb.org/gsea/msigdb/collections.jsp
+#' @return msigdb_pathlist list object
+#' @export
+
+fgsea_plot <- function(fgsea_res_tb, msigdb_cat){
+  gg_fgsea <- ggplot2::ggplot(fgsea_res_tb, ggplot2::aes(reorder(pathway, NES), NES)) +
+              ggplot2::geom_col(ggplot2::aes(fill = padj)) +
+              ggplot2::coord_flip() +
+              ggplot2::labs(x = "Pathway",
+                            y = "Normalized Enrichment Score",
+                            title = paste0(msigdb_cat, "MsigDB pathways NES")) +
+              ggplot2::theme_minimal()
+  return(gg_fgsea)
+}

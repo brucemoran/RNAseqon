@@ -244,7 +244,7 @@ obs_raw_widen <- function(so, which_value, group_col) {
                                          values_from = !!which_value) %>%
                       dplyr::inner_join(so$target_mapping, .) %>%
                       dplyr::group_by_at(group_col) %>%
-                      dplyr::summarise_if(is.numeric, .funs = c(sum="sum")) %>%
+                      dplyr::summarise_if(is.numeric, .funs = c(sum = "sum")) %>%
                       dplyr::ungroup() %>%
                       dplyr::inner_join(so$target_mapping, .) %>%
                       dplyr::rename_at(unlist(purrr::map(long_col, dplyr::starts_with, vars = colnames(.))), list(~gsub("_sum", "", .)))  %>%
@@ -274,7 +274,7 @@ so_to_raw_counts <- function(so){
   ##df and header
   raw_df <- tibble::column_to_rownames(.data = as.data.frame(so$obs_raw_count$wide),
                                        var = "ensembl_gene_id")
-  raw_df <- nzero(raw_df[,-1])
+  raw_df <- nzero(raw_df[,unlist(lapply(as.vector(raw_df[1,]), is.numeric))])
   return(raw_df)
 }
 
