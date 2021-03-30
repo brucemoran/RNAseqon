@@ -4,7 +4,7 @@
 \alias{run_msviper}
 \title{Run msViper}
 \usage{
-run_msviper(TAG, RDATA)
+run_msviper(TAG, RDATA, genome_prefix, msigdb_species)
 }
 \arguments{
 \item{TAG}{string identifier of the run}
@@ -13,20 +13,7 @@ run_msviper(TAG, RDATA)
 
 \item{genome_prefix}{string of a genome in biomart$dataset, suffixed with '_gene_ensembl'}
 
-\item{msigdb_species}{one of msigdbr::msigdbr_show_species(), default:"Homo sapiens"}
-
-\item{msigdb_cat}{one of 'c("H", paste0("C", c(1:7)))', see: gsea-msigdb.org/gsea/msigdb/collections.jsp}
-
-\item{tag}{string used to prefix output}
-
-\item{gene_col}{the name of the column in tibble with gene names found in pathways, set to "rownames" if they are the rownames (default)}
-
-\item{output_dir}{path to where output goes}
-
-\item{sig_val}{significance used in analysis}
-
-\item{per_regulon}{flag to indicate if fgsea is at collective regulon level,
-or if each regulon and the genes it is co-expressed with are used}
+\item{msigdb_species}{one of msigdbr::msigdbr_show_species()}
 }
 \value{
 none, saves RData files of output
