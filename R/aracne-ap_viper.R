@@ -134,10 +134,10 @@ run_msviper <- function(TAG, RDATA, genome_prefix, msigdb_species){
         plot(mra, pval = mra$es$q.value, cex = .7)
       dev.off()
 
-      mra_tb <- tibble::tibble(NES = mra$es$nes,
-                               Size = mra$es$size,
-                               p.value = mra$es$p.value,
-                               q.value = mra$es$q.value)
+      mra_tb <- data.frame(NES = mra$es$nes,
+                           Size = mra$es$size,
+                           p.value = mra$es$p.value,
+                           q.value = mra$es$q.value)
 
       readr::write_tsv(tibble::as_tibble(mra_tb, rownames = "ensembl_gene_id"), file = paste0(TAG, ".", pairname, ".msViper.results.tsv"))
 
