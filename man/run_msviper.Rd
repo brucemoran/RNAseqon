@@ -13,7 +13,7 @@ run_msviper(TAG, RDATA, genome_prefix, msigdb_species)
 
 \item{genome_prefix}{string of a genome in biomart$dataset, suffixed with '_gene_ensembl'}
 
-\item{msigdb_species}{one of msigdbr::msigdbr_show_species()}
+\item{msigdb_species}{one of msigdbr::msigdbr_species()}
 }
 \value{
 none, saves RData files of output

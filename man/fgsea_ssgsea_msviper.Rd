@@ -11,6 +11,7 @@ fgsea_ssgsea_msviper(
   msigdb_species = "Homo sapiens",
   msigdb_cat = "H",
   tag,
+  exprdh,
   gene_col = "external_gene_name",
   output_dir,
   sig_val = 0.1,
@@ -25,11 +26,13 @@ fgsea_ssgsea_msviper(
 
 \item{genome_prefix}{string of a genome in biomart$dataset, suffixed with '_gene_ensembl'}
 
-\item{msigdb_species}{one of msigdbr::msigdbr_show_species(), default:"Homo sapiens"}
+\item{msigdb_species}{one of msigdbr::msigdbr_species(), default:"Homo sapiens"}
 
 \item{msigdb_cat}{one of 'c("H", paste0("C", c(1:7)))', see: gsea-msigdb.org/gsea/msigdb/collections.jsp}
 
 \item{tag}{string used to prefix output}
+
+\item{exprdh}{expression data}
 
 \item{gene_col}{the name of the column in tibble with gene names found in pathways, set to "rownames" if they are the rownames (default)}
 
