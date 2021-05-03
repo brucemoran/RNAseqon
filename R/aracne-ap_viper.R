@@ -156,8 +156,7 @@ run_msviper <- function(TAG, RDATA, genome_prefix, msigdb_species){
                            gene_col = "external_gene_name",
                            output_dir = "./",
                            sig_val = 0.1,
-                           per_regulon = TRUE,
-                           rdata = paste0(TAG, ".", pairname, ".RData"))
+                           per_regulon = TRUE)
 
     }
   })
@@ -251,6 +250,21 @@ highest_exp_wides <- function(wide_object, name_col, id_col, value_cols){
   ##remove those with multi mapping (in mean_map) from original input
   #mean_map_o <- dplyr::anti_join(wide_object, mean_map, by = name_col) %>%
 
+  ##if two or more lines, the mean_value was the same, so add 0.001 to first row,col, and repeat
+  if(dim(mean_map)[1] > 1){
+    mean_map[1,value_cols[1]] <- mean_map[1,value_cols[1]]+0.001
+    mean_map <- mean_map %>% dplyr::select(name_col, id_col, value_cols) %>%
+                                dplyr::mutate(mean_value = rowMeans(.[value_cols])) %>%
+                                dplyr::group_by_at(dplyr::vars(name_col)) %>%
+                                na.omit(mean_value) %>%
+                                dplyr::add_count()%>%
+                                dplyr::filter(n > 1) %>%
+                                dplyr::filter(mean_value == max(mean_value)) %>%
+                                dplyr::ungroup() %>%
+                                dplyr::distinct_at(dplyr::vars(-id_col), .keep_all = TRUE) %>%
+                                dplyr::select(-n, -mean_value)
+  }
+
   ##return the two sets, bound
   #dplyr::bind_rows(mean_map_o, mean_map)
   return(mean_map)
@@ -309,9 +323,6 @@ fgsea_ssgsea_msviper <- function(mra, mra_stat = "p.value", genome_prefix, msigd
   ##output dir
   out_dir <- paste0(output_dir, "/viper")
   dir.create(paste0(out_dir, "/fgsea"), recursive = TRUE, showWarnings = FALSE)
-
-  ##have to map ENS to ext AGAINNNN
-  load(rdata)
 
   ##MsigDB pathways genelists
   msigdb_pathlist <- msigdb_pathways_to_list(msigdb_species, msigdb_cat)
@@ -425,7 +436,6 @@ fgsea_ssgsea_msviper <- function(mra, mra_stat = "p.value", genome_prefix, msigd
                             dplyr::left_join(pathways_sig_res_tb, .) %>%
                             dplyr::select(regulon, pathway, external_gene_name, ensembl_gene_id) %>%
                             dplyr::arrange(regulon)
-
 
     ##do ssgsea
     add_small <- function(f){f+0.0000001}
