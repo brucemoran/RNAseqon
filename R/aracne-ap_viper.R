@@ -240,33 +240,29 @@ highest_exp_wides <- function(wide_object, name_col, id_col, value_cols){
                               dplyr::mutate(mean_value = rowMeans(.[value_cols])) %>%
                               dplyr::group_by_at(dplyr::vars(name_col)) %>%
                               na.omit(mean_value) %>%
-                              dplyr::add_count()%>%
-                              dplyr::filter(n > 1) %>%
-                              dplyr::filter(mean_value == max(mean_value)) %>%
-                              dplyr::ungroup() %>%
-                              dplyr::distinct_at(dplyr::vars(-id_col), .keep_all = TRUE) %>%
-                              dplyr::select(-n, -mean_value)
+                              dplyr::add_count()
 
-  ##remove those with multi mapping (in mean_map) from original input
-  #mean_map_o <- dplyr::anti_join(wide_object, mean_map, by = name_col) %>%
+  mm_1 <- mean_map %>% dplyr::filter(n == 1) %>%
+                        dplyr::filter(mean_value == max(mean_value)) %>%
+                        dplyr::ungroup() %>%
+                        dplyr::distinct(dplyr::across(-id_col), .keep_all = TRUE) %>%
+                        dplyr::select(-n, -mean_value)
 
-  ##if two or more lines, the mean_value was the same, so add 0.001 to first row,col, and repeat
-  if(dim(mean_map)[1] > 1){
-    mean_map[1,value_cols[1]] <- mean_map[1,value_cols[1]]+0.001
-    mean_map <- mean_map %>% dplyr::select(name_col, id_col, value_cols) %>%
-                                dplyr::mutate(mean_value = rowMeans(.[value_cols])) %>%
-                                dplyr::group_by_at(dplyr::vars(name_col)) %>%
-                                na.omit(mean_value) %>%
-                                dplyr::add_count()%>%
-                                dplyr::filter(n > 1) %>%
-                                dplyr::filter(mean_value == max(mean_value)) %>%
-                                dplyr::ungroup() %>%
-                                dplyr::distinct_at(dplyr::vars(-id_col), .keep_all = TRUE) %>%
-                                dplyr::select(-n, -mean_value)
+  mm_gt1 <- mean_map %>% dplyr::filter(n > 1) %>%
+                         dplyr::filter(mean_value == max(mean_value)) %>%
+                         dplyr::ungroup() %>%
+                         dplyr::distinct(dplyr::across(-id_col), .keep_all = TRUE) %>%
+                         dplyr::select(-n, -mean_value)
+
+  ##remove the higher ENSG00000 value, these are on patches in GRCh38
+  str_no <- function(x){
+    lapply(x, function(f){strsplit(f, "ENSG000")[[1]][2]})
   }
+  mm_gt11 <- mm_gt1 %>% dplyr::mutate(ensembl_gene_id_no = as.numeric(str_no(ensembl_gene_id))) %>%
+                        dplyr::filter(ensembl_gene_id_no == min(ensembl_gene_id_no))
 
   ##return the two sets, bound
-  #dplyr::bind_rows(mean_map_o, mean_map)
+  mean_map <- dplyr::bind_rows(mm_gt11, mean_map)
   return(mean_map)
 }
 
