@@ -12,6 +12,7 @@ fgsea_ssgsea_msviper(
   msigdb_cat = "H",
   tag,
   exprdh,
+  tx2gene,
   gene_col = "external_gene_name",
   output_dir,
   sig_val = 0.1,
@@ -33,6 +34,8 @@ fgsea_ssgsea_msviper(
 \item{tag}{string used to prefix output}
 
 \item{exprdh}{expression data}
+
+\item{tx2gene}{annotation data}
 
 \item{gene_col}{the name of the column in tibble with gene names found in pathways, set to "rownames" if they are the rownames (default)}
 
