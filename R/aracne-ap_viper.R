@@ -262,7 +262,7 @@ highest_exp_wides <- function(wide_object, name_col, id_col, value_cols){
                         dplyr::filter(ensembl_gene_id_no == min(ensembl_gene_id_no))
 
   ##return the two sets, bound
-  mean_map <- dplyr::bind_rows(mm_gt11, mean_map)
+  mean_map <- dplyr::bind_rows(mm_gt11, mm_1)
   return(mean_map)
 }
 
@@ -355,6 +355,7 @@ fgsea_ssgsea_msviper <- function(mra, mra_stat = "p.value", genome_prefix, msigd
     sigunames <- c(dplyr::select(.data = sigunames, external_gene_name))
 
     fgsea_res_sigulon_list <- lapply(sigulons, function(f){
+      print(f)
       tfmode <- mra$regulon[[f]]$tfmode
       rank_vec <- tibble::as_tibble(tfmode, rownames = "ensembl_gene_id") %>%
                   dplyr::left_join(., dplyr::distinct(tx2gene[,c(2,3)])) %>%
