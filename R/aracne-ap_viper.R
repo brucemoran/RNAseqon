@@ -68,7 +68,7 @@ parse_aracne <- function(NETWORK, EXPRMAT, METADATA, TAG, genome_prefix = "hsapi
   combined.eset <- Biobase::ExpressionSet(assayData = as.matrix(exprds),
                                           phenoData = pData)
   print("Saving...")
-  save(combined.eset, tx2gene, phenos, exprds, exprdh, regulonaracne, file = paste0(TAG,".parse_inputs.RData"))
+  save(combined.eset, tx2gene, phenos, exprds, exprdh, regulonaracne, file = paste0(TAG, ".parse_inputs.RData"))
 }
 
 #' Run msViper
@@ -142,11 +142,7 @@ run_msviper <- function(TAG, RDATA, genome_prefix, msigdb_species){
 
       readr::write_tsv(tibble::as_tibble(mra_tb, rownames = "ensembl_gene_id"), file = paste0(TAG, ".", pairname, ".msViper.results.tsv"))
 
-      retList <- list(mra, mra_tb)
-      assignedName <- paste0(pairname)
-      assign(assignedName, value = retList)
-      saveFile <- paste0(TAG, ".", pairname, ".RData")
-      save(list = assignedName, file = saveFile)
+      save(mra, mra_tb, file = paste0(TAG, ".", pairname, ".msViper.RData"))
 
       ##fgsea ssgsea
       fgsea_ssgsea_msviper(mra = mra,
@@ -156,6 +152,7 @@ run_msviper <- function(TAG, RDATA, genome_prefix, msigdb_species){
                            msigdb_cat = "H",
                            TAG,
                            exprdh = exprdh,
+                           tx2gene = tx2gene,
                            gene_col = "external_gene_name",
                            output_dir = "./",
                            sig_val = 0.1,
@@ -294,6 +291,7 @@ make_aracne_inputs <- function(tpm_tb, metadata, meta_group, tag){
 #' @param msigdb_cat one of 'c("H", paste0("C", c(1:7)))', see: gsea-msigdb.org/gsea/msigdb/collections.jsp
 #' @param tag string used to prefix output
 #' @param exprdh expression data
+#' @param tx2gene annotation data
 #' @param gene_col the name of the column in tibble with gene names found in pathways, set to "rownames" if they are the rownames (default)
 #' @param output_dir path to where output goes
 #' @param sig_val significance used in analysis
@@ -304,7 +302,7 @@ make_aracne_inputs <- function(tpm_tb, metadata, meta_group, tag){
 #' @return sure
 #' @export
 
-fgsea_ssgsea_msviper <- function(mra, mra_stat = "p.value", genome_prefix, msigdb_species = "Homo sapiens", msigdb_cat = "H", tag, exprdh, gene_col = "external_gene_name", output_dir, sig_val = 0.1, per_regulon = NULL, rdata) {
+fgsea_ssgsea_msviper <- function(mra, mra_stat = "p.value", genome_prefix, msigdb_species = "Homo sapiens", msigdb_cat = "H", tag, exprdh, tx2gene, gene_col = "external_gene_name", output_dir, sig_val = 0.1, per_regulon = NULL, rdata) {
 
   print("Running: fgsea_ssgsea_msviper()")
 
