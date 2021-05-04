@@ -78,6 +78,7 @@ ssgsea_rotationPCA <- function(ssgsea, metadata, hallmark_tb = NULL, contrast, r
     ##make point data for samples
     p <- tibble::as_tibble(pca$x, rownames = "sample") %>%
          dplyr::left_join(metadata, .)
+    p$group <- as.factor(p$group)
 
     if(!is.null(hallmark_tb)){
       hallmark_tb$Hallmark_Name <- paste0("HALLMARK_", hallmark_tb$Hallmark_Name)
@@ -127,10 +128,10 @@ ssgsea_rotationPCA <- function(ssgsea, metadata, hallmark_tb = NULL, contrast, r
     } else {
       stop("Unfinished, suggest using Hallmarks...")
       ggp <- ggplot2::ggplot(data = p,
-                             ggplot2::aes(x = PC1, y = PC2, group = intgroup)) +
-             ggplot2::geom_point(ggplot2::aes_string(shape = intgroup,
-                                                    colour = intgroup,
-                                                    fill = intgroup),
+                             ggplot2::aes(x = PC1, y = PC2, group = group)) +
+             ggplot2::geom_point(ggplot2::aes_string(shape = "group",
+                                                     colour = "group",
+                                                     fill = "group"),
                                  size = 3)
     }
     ggp_pca_list <- list(ggplot = ggp, pca = pca)
