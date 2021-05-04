@@ -356,7 +356,7 @@ fgsea_ssgsea_msviper <- function(mra, mra_stat = "p.value", genome_prefix, msigd
     sigunames <- dplyr::filter(.data = dplyr::distinct(tx2gene[,c(2,3)]), ensembl_gene_id %in% sigulons)
     sigunames <- c(dplyr::select(.data = sigunames, external_gene_name))
 
-    fgsea_res_sigulon_list1 <- lapply(sigulons, function(f){
+    fgsea_res_sigulon_list <- lapply(sigulons, function(f){
       print(f)
       tfmode <- mra$regulon[[f]]$tfmode
       rank_vec <- tibble::as_tibble(tfmode, rownames = "ensembl_gene_id") %>%
