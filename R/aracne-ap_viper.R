@@ -36,10 +36,10 @@ parse_aracne <- function(NETWORK, EXPRMAT, METADATA, TAG, genome_prefix = "hsapi
   exprdg <- dplyr::left_join(tx2gene, exprd) %>%
             dplyr::select(external_gene_name, ensembl_gene_id, where(is.numeric))
 
-  exprdh <- highest_exp_wides(wide_object = exprdg,
-                             name_col = "external_gene_name",
-                             id_col = "ensembl_gene_id",
-                             value_cols = 3:dim(exprdg)[2])
+  exprdh <- RNAseqon::highest_exp_wides(wide_object = exprdg,
+                                        name_col = "external_gene_name",
+                                        id_col = "ensembl_gene_id",
+                                        value_cols = 3:dim(exprdg)[2])
 
   print("Processing metadata...")
   pheno <- readr::read_tsv(METADATA)
@@ -238,9 +238,10 @@ highest_exp_wides <- function(wide_object, name_col, id_col, value_cols){
   ##filter out all with name_col single mapping
   mean_map <- wide_object %>% dplyr::select(name_col, id_col, value_cols) %>%
                               dplyr::mutate(mean_value = rowMeans(.[value_cols])) %>%
-                              dplyr::group_by_at(dplyr::vars(name_col)) %>%
+                              dplyr::group_by(dplyr::across(name_col)) %>%
                               na.omit(mean_value) %>%
-                              dplyr::add_count()
+                              dplyr::add_count() %>%
+                              dplyr::distinct()
 
   mm_1 <- mean_map %>% dplyr::filter(n == 1) %>%
                         dplyr::filter(mean_value == max(mean_value)) %>%
@@ -248,21 +249,20 @@ highest_exp_wides <- function(wide_object, name_col, id_col, value_cols){
                         dplyr::distinct(dplyr::across(-id_col), .keep_all = TRUE) %>%
                         dplyr::select(-n, -mean_value)
 
-  mm_gt1 <- mean_map %>% dplyr::filter(n > 1) %>%
-                         dplyr::filter(mean_value == max(mean_value)) %>%
-                         dplyr::ungroup() %>%
-                         dplyr::distinct(dplyr::across(-id_col), .keep_all = TRUE) %>%
-                         dplyr::select(-n, -mean_value)
-
   ##remove the higher ENSG00000 value, these are on patches in GRCh38
   str_no <- function(x){
     lapply(x, function(f){strsplit(f, "ENSG000")[[1]][2]})
   }
-  mm_gt11 <- mm_gt1 %>% dplyr::mutate(ensembl_gene_id_no = as.numeric(str_no(ensembl_gene_id))) %>%
-                        dplyr::filter(ensembl_gene_id_no == min(ensembl_gene_id_no))
+  mm_gt1 <- mean_map %>% dplyr::filter(n > 1) %>%
+                         dplyr::filter(mean_value == max(mean_value)) %>%
+                         dplyr::mutate(ensembl_gene_id_no = as.numeric(str_no(ensembl_gene_id))) %>%
+                                               dplyr::filter(ensembl_gene_id_no == min(ensembl_gene_id_no)) %>%
+                         dplyr::ungroup() %>%
+                         dplyr::distinct(dplyr::across(-id_col), .keep_all = TRUE) %>%
+                         dplyr::select(-n, -mean_value, -ensembl_gene_id_no)
 
   ##return the two sets, bound
-  mean_map <- dplyr::bind_rows(mm_gt11, mm_1)
+  mean_map <- dplyr::bind_rows(mm_gt1, mm_1)
   return(mean_map)
 }
 

@@ -115,15 +115,21 @@ get_tx2gene <- function(genome_prefix){
                                              "ensembl_gene_id",
                                              "external_gene_name",
                                              "hsapiens_homolog_ensembl_gene",
-                                             "hsapiens_homolog_associated_gene_name"),
+                                             "hsapiens_homolog_associated_gene_name",
+                                             "chromosome_name"),
                                    mart = mart,
-                                   useCache = FALSE))
+                                   useCache = FALSE)) %>%
+                                   dplyr::filter(!stringr::str_detect(chromosome_name, "GL|KI|CHR_")) %>%
+                                   dplyr::select(-chromosome_name)
     } else {
       tx2gene <- tibble::as_tibble(biomaRt::getBM(attributes=c("ensembl_transcript_id",
                                              "ensembl_gene_id",
-                                             "external_gene_name"),
+                                             "external_gene_name",
+                                             "chromosome_name"),
                                 mart = mart,
-                                useCache = FALSE))
+                                useCache = FALSE)) %>%
+                                dplyr::filter(!stringr::str_detect(chromosome_name, "GL|KI|CHR_")) %>%
+                                dplyr::select(-chromosome_name)
     }
     colnames(tx2gene)[1] <- "target_id"
     return(tx2gene)
