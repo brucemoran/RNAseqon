@@ -156,7 +156,8 @@ run_msviper <- function(TAG, RDATA, genome_prefix, msigdb_species){
                            gene_col = "external_gene_name",
                            output_dir = "./",
                            sig_val = 0.1,
-                           per_regulon = TRUE)
+                           per_regulon = TRUE,
+                           phenos = phenos)
 
     }
   })
@@ -307,12 +308,12 @@ make_aracne_inputs <- function(tpm_tb, metadata, meta_group, tag){
 #' @param sig_val significance used in analysis
 #' @param per_regulon flag to indicate if fgsea is at collective regulon level,
 #'        or if each regulon and the genes it is co-expressed with are used
-#' @param rdata parse_inputs.RData from parse_aracne() file location
+#' @param phenos metadata tibble
 #' @importFrom magrittr '%>%'
 #' @return sure
 #' @export
 
-fgsea_ssgsea_msviper <- function(mra, mra_stat = "p.value", genome_prefix, msigdb_species = "Homo sapiens", msigdb_cat = "H", tag, exprdh, tx2gene, gene_col = "external_gene_name", output_dir, sig_val = 0.1, per_regulon = NULL, rdata) {
+fgsea_ssgsea_msviper <- function(mra, mra_stat = "p.value", genome_prefix, msigdb_species = "Homo sapiens", msigdb_cat = "H", tag, exprdh, tx2gene, gene_col = "external_gene_name", output_dir, sig_val = 0.1, per_regulon = NULL, phenos) {
 
   print("Running: fgsea_ssgsea_msviper()")
 
@@ -448,7 +449,7 @@ fgsea_ssgsea_msviper <- function(mra, mra_stat = "p.value", genome_prefix, msigd
     if(length(fgsea_res_sigulon_list) > 1){
       ssgsea_pca_list <- RNAseqon::ssgsea_pca(pways = fgsea_res_sigulon_list,
                                     log2tpm_mat = log2_tpm_mat,
-                                    msigdb_cat = "H",
+                                    msigdb_cat = msigdb_cat,
                                     output_dir = out_dir,
                                     contrast = paste0(tag, " msViper Regulon Genesets"),
                                     metadata = metadata)

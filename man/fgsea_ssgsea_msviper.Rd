@@ -17,7 +17,7 @@ fgsea_ssgsea_msviper(
   output_dir,
   sig_val = 0.1,
   per_regulon = NULL,
-  rdata
+  phenos
 )
 }
 \arguments{
@@ -46,7 +46,7 @@ fgsea_ssgsea_msviper(
 \item{per_regulon}{flag to indicate if fgsea is at collective regulon level,
 or if each regulon and the genes it is co-expressed with are used}
 
-\item{rdata}{parse_inputs.RData from parse_aracne() file location}
+\item{phenos}{metadata tibble}
 }
 \value{
 sure

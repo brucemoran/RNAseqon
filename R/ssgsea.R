@@ -65,6 +65,10 @@ ssgsea_pca <- function(pways, log2tpm_mat, msigdb_cat = "H", output_dir, contras
 
 ssgsea_rotationPCA <- function(ssgsea, metadata, hallmark_tb = NULL, contrast, returnData = FALSE, group = NULL) {
 
+    if("sampleID" %in% colnames(metadata)){
+      colnames(metadata)[match("sampleID" , colnames(metadata))] <- "sample"
+    }
+
     pca <- prcomp(t(ssgsea))
     percentVar <- pca$sdev^2/sum(pca$sdev^2)
 
