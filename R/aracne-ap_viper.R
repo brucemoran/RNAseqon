@@ -318,8 +318,13 @@ fgsea_ssgsea_msviper <- function(mra, mra_stat = "p.value", genome_prefix, msigd
   print("Running: fgsea_ssgsea_msviper()")
 
   ##output dir
-  out_dir <- paste0(output_dir, "/viper")
-  dir.create(paste0(out_dir, "/fgsea"), recursive = TRUE, showWarnings = FALSE)
+  lapply(c("fgsea", "ssgsea"), function(ff){
+    lapply(c("data", "plots"), function(f){
+      dir.create(paste0(output_dir, "/", ff, "/", f),
+                 recursive = TRUE,
+                 showWarnings = FALSE)
+    })
+  })
 
   ##MsigDB pathways genelists
   msigdb_pathlist <- msigdb_pathways_to_list(msigdb_species, msigdb_cat)
@@ -345,8 +350,8 @@ fgsea_ssgsea_msviper <- function(mra, mra_stat = "p.value", genome_prefix, msigd
     fgsea_res_sig_tb <- dplyr::arrange(.data = fgsea_res_sig_tb, desc(NES))
 
     gg_fgsea <- fgsea_plot(fgsea_res_tb = fgsea_res_sig_tb, msigdb_cat = msigdb_cat)
-    ggplot2::ggsave(gg_fgsea, file = paste0(out_dir, "/fgsea/", tag , ".fgsea_sig_viper.ggplot2.pdf"))
-    save(fgsea_res_tb, file = paste0(out_dir, "/fgsea/", tag , ".fgsea_sig_viper.RData"))
+    ggplot2::ggsave(gg_fgsea, file = paste0(output_dir, "/fgsea/plots/", tag , ".fgsea_sig_viper.ggplot2.pdf"))
+    save(fgsea_res_tb, file = paste0(output_dir, "/fgsea/data/", tag , ".fgsea_sig_viper.RData"))
 
   } else {
 
@@ -378,8 +383,8 @@ fgsea_ssgsea_msviper <- function(mra, mra_stat = "p.value", genome_prefix, msigd
       if(dim(fgsea_res_sig_tb)[1] > 0){
 
         gg_fgsea <- fgsea_plot(fgsea_res_tb = fgsea_res_sig_tb, msigdb_cat = msigdb_cat)
-      #  ggplot2::ggsave(gg_fgsea, file = paste0(out_dir, "/plots/", tag , ".fgsea_sig_viper.ggplot2.pdf"))
-        save(fgsea_res_tb, gg_fgsea, file = paste0(out_dir, "/fgsea/", tag , ".fgsea_sig_viper.RData"))
+        ggplot2::ggsave(gg_fgsea, file = paste0(output_dir, "/fgsea/plots/", tag , ".fgsea_sig_viper.ggplot2.pdf"))
+        save(fgsea_res_tb, gg_fgsea, file = paste0(output_dir, "/fgsea/data", tag , ".fgsea_sig_viper.RData"))
       }
 
       return(list(rank_names = names(rank_vec), fgsea_res = fgsea_res))
@@ -387,7 +392,7 @@ fgsea_ssgsea_msviper <- function(mra, mra_stat = "p.value", genome_prefix, msigd
     })
 
     names(fgsea_res_sigulon_list) <- unlist(sigunames)
-    save(fgsea_res_sigulon_list, file = paste0(out_dir, "/fgsea/", tag , ".per_regulon_viper.RData"))
+    save(fgsea_res_sigulon_list, file = paste0(output_dir, "/fgsea/data", tag , ".per_regulon_viper.RData"))
 
     ##do all sigulons at once, i.e. all genes in sigulon genesets
     sigulon_s <- unlist(mra$regulon[mra$es$p.value < sig_val])
@@ -456,11 +461,11 @@ fgsea_ssgsea_msviper <- function(mra, mra_stat = "p.value", genome_prefix, msigd
       ssgsea_pca_list <- RNAseqon::ssgsea_pca(pways = pways,
                                     log2tpm_mat = log2_tpm_mat,
                                     msigdb_cat = msigdb_cat,
-                                    output_dir = out_dir,
+                                    output_dir = output_dir,
                                     contrast = paste0(tag, " msViper Regulon Genesets"),
                                     metadata = metadata)
       names(ssgsea_pca_list) <- sigunames
-      save(ssgsea_pca_list, file = paste0(out_dir, "/ssgsea/", tag , ".ssgsea_pca_viper.RData"))
+      save(ssgsea_pca_list, file = paste0(output_dir, "/ssgsea/data/", tag , ".ssgsea_pca_viper.RData"))
     }
   }
 }
