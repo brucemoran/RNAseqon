@@ -384,7 +384,7 @@ fgsea_ssgsea_msviper <- function(mra, mra_stat = "p.value", genome_prefix, msigd
 
         gg_fgsea <- fgsea_plot(fgsea_res_tb = fgsea_res_sig_tb, msigdb_cat = msigdb_cat)
         ggplot2::ggsave(gg_fgsea, file = paste0(output_dir, "/fgsea/plots/", tag , ".fgsea_sig_viper.ggplot2.pdf"))
-        save(fgsea_res_tb, gg_fgsea, file = paste0(output_dir, "/fgsea/data", tag , ".fgsea_sig_viper.RData"))
+        save(fgsea_res_tb, gg_fgsea, file = paste0(output_dir, "/fgsea/data/", tag , ".fgsea_sig_viper.RData"))
       }
 
       return(list(rank_names = names(rank_vec), fgsea_res = fgsea_res))
@@ -392,7 +392,7 @@ fgsea_ssgsea_msviper <- function(mra, mra_stat = "p.value", genome_prefix, msigd
     })
 
     names(fgsea_res_sigulon_list) <- unlist(sigunames)
-    save(fgsea_res_sigulon_list, file = paste0(output_dir, "/fgsea/data", tag , ".per_regulon_viper.RData"))
+    save(fgsea_res_sigulon_list, file = paste0(output_dir, "/fgsea/data/", tag , ".per_regulon_viper.RData"))
 
     ##do all sigulons at once, i.e. all genes in sigulon genesets
     sigulon_s <- unlist(mra$regulon[mra$es$p.value < sig_val])
