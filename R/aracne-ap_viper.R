@@ -465,7 +465,7 @@ fgsea_ssgsea_msviper <- function(mra, mra_stat = "p.value", genome_prefix, msigd
                                     contrast = paste0(tag, " msViper Regulon Genesets"),
                                     metadata = metadata)
       names(ssgsea_pca_list) <- sigunames
-      save(ssgsea_pca_list, file = paste0(output_dir, "/ssgsea/data/", tag , ".ssgsea_pca_viper.RData"))
+      save(ssgsea_pca_list, pways, log2_tpm_mat, metadata, file = paste0(output_dir, "/ssgsea/data/", tag , ".ssgsea_pca_viper.RData"))
     }
   }
 }
