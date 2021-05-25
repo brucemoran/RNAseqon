@@ -93,7 +93,7 @@ ssgsea_rotationPCA <- function(ssgsea, metadata, hallmark_tb = NULL, contrast, r
     if("Process_Category" %in% colnames(d)){
       colsh_p <- colnames(p)[2]
 
-      ggpp <- ggplot2::ggplot() + ggplot2::geom_segment(data = d,
+      ggp <- ggplot2::ggplot() + ggplot2::geom_segment(data = d,
                                 ggplot2::aes(x = 0, y = 0, xend = (PC1*2),
                                 yend = (PC2*2),
                                 group = Process_Category,
@@ -104,6 +104,12 @@ ssgsea_rotationPCA <- function(ssgsea, metadata, hallmark_tb = NULL, contrast, r
                                 size = 1.2,
                                 linetype = 1,
                                 inherit.aes = FALSE) +
+              ggplot2::geom_point(data = p,
+                                 ggplot2::aes_string(x = "PC1", y = "PC2",
+                                 shape = colsh_p),
+                                 size = 2.5,
+                                 show.legend = TRUE,
+                                 inherit.aes = FALSE) +
               ggrepel::geom_label_repel(data = d,
                                       ggplot2::aes(x = (PC1*2), y = (PC2*2),
                                       label = gsub("HALLMARK_", "", Hallmark_Name),
@@ -116,14 +122,6 @@ ssgsea_rotationPCA <- function(ssgsea, metadata, hallmark_tb = NULL, contrast, r
               ggplot2::labs(title = contrast,
                             subtitle = "PCA plot using MsigDB Hallmark with Process_Category",
                             x = paste0("PC1: ", round(percentVar[1] *  100), "% variance"),y = paste0("PC2: ", round(percentVar[2] * 100), "% variance"))
-
-      ggp <- ggpp +
-             ggplot2::geom_point(data = p,
-                                ggplot2::aes_string(x = "PC1", y = "PC2",
-                                shape = colsh_p),
-                                size = 2.5,
-                                show.legend = TRUE,
-                                inherit.aes = FALSE)
 
     } else {
       stop("Unfinished, suggest using Hallmarks...")
