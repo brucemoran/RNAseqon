@@ -23,17 +23,24 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
     control_reference <- as.null(control_reference)
   }
 
-  ##create an output called RNAseqR in current dir if no output_dir defined
+  ##create an output called RNAseqon in current dir if no output_dir defined
   if(is.null(output_dir)){
     output_dir <- paste0(getwd(), "/", tag, "/RNAseqon")
     dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   }
 
   ##prepare data and save
-  sot <- RNAseqon::brucemoran_rnaseq_kallisto_parser(metadata_csv,
+  # if(pipeline %in% "rnaseq_kallisto"){
+    sot <- RNAseqon::brucemoran_rnaseq_kallisto_parser(metadata_csv,
                                            data_dir = data_dir,
                                            genome_prefix = genome_prefix)
-
+  # }
+  # if(pipeline %in% "star-salmon"){
+  #   sot <- RNAseqon::brucemoran_rnaseq_kallisto_parser(metadata_csv,
+  #                                            data_dir = data_dir,
+  #                                            genome_prefix = genome_prefix)
+  # }
+  #
   ##create required inputs to modules
   count_data <- so_to_raw_counts(sot[[1]])
   tpm_tb <- sot[[1]]$obs_raw_tpm$wide
