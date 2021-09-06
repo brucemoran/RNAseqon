@@ -41,6 +41,46 @@ nf_core_rnaseq_featco_parser <- function(tag = NULL){
   return(nz_fc_co)
 }
 
+#' Parse featurecounts input as a follow-on from standard nf-core/rnaseq pipeline using STAR-Salmon (v3.3 currently)
+#'
+#' @param tag string to prefix output
+#' @return nz_fc_co raw count object with no lines summing to zeros
+#' @importFrom magrittr '%>%'
+#' @export
+
+nf_core_rnaseq_star_salmon_parser <- function(tag = NULL){
+
+  if(is.null(tag)){
+    tag <- "nf-core_rnaseq"
+  }
+
+  ##read in merged star-salmon results
+  ##parse names using "." for nicer colnames
+  fc_merge <- readr::read_tsv(paste0(tag, "/star_salmon/salmon.merged.gene_counts.tsv"))
+  coln_samples <- colnames(fc_merge[3:length(colnames(fc_merge))])
+  n_coln_samples <- unlist(lapply(coln_samples, function(f){
+    strsplit(f, delim_samples)[[1]][1]
+  }))
+  colnames(fc_merge) <- c("ensembl_gene_id",
+                          "external_gene_name",
+                          n_coln_samples)
+  on_coln_samples <- n_coln_samples[order(n_coln_samples)]
+  fc_merge_so <- fc_merge %>% dplyr::select(1, 2, on_coln_samples) %>%
+           dplyr::arrange(ensembl_gene_id)
+
+  fc_co <- fc_merge_so %>%
+           dplyr::select(1, on_coln_samples) %>%
+           as.data.frame() %>%
+           column_to_rownames("ensembl_gene_id")
+
+  ##remove zero-count genes
+  nzero <- function(x){
+    x[apply(x,1,sum) > 0,]
+  }
+  nz_fc_co <- nzero(fc_co)
+  return(nz_fc_co)
+}
+
 #' Take metadata CSV, parse Kallisto output and return a Sleuth object with raw counts
 #'
 #' @param metadata_csv CSV format file with columns:
