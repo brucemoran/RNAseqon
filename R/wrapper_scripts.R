@@ -140,7 +140,7 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
        file = paste0(outdir, "/", tag, ".full_results.RData"))
 
   ##per contrast DE overlap with pathways, and gene sets in lists
-  pc_fgsea_limma_de_list <- per_contrast_fgsea_de(fgsea_list_limma_rank_fithree, occupancy = 5)
+  pc_fgsea_limma_de_list <- RNAseqon::per_contrast_fgsea_de(fgsea_list_limma_rank_fithree, occupancy = 5)
   names(pc_fgsea_limma_de_list) <- names(fgsea_list_limma_rank_fithree)
 
   ##use these as input to ssGSEA in GSVA
@@ -157,7 +157,7 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
   metadata_pca <- dplyr::select(.data = metadata_tb, sample, !!metadata_cov)
 
   pc_ssgsea_list <- lapply(names(pc_fgsea_limma_de_list), function(f){
-                      ssgsea_pca_list <- ssgsea_pca(pways = pc_fgsea_limma_de_list[[f]][[2]],
+                      ssgsea_pca_list <- RNAseqon::ssgsea_pca(pways = pc_fgsea_limma_de_list[[f]][[2]],
                                                     log2tpm_mat = agg_log2tpm_ext_mat,
                                                     msigdb_cat = "H",
                                                     output_dir = output_dir,
@@ -169,5 +169,5 @@ run_prep_modules_bm <- function(metadata_csv, metadata_design, tag, output_dir =
   ##aracne inputs
   design_vec <- unlist(lapply(metadata_design, function(f){gsub(" ", "", strsplit(f, "\\+")[[1]])}))
   CONDITION <- rev(design_vec)[1]
-  make_aracne_inputs(tpm_tb, metadata = metadata_tb, meta_group = CONDITION, tag = tag)
+  RNAseqon::make_aracne_inputs(tpm_tb, metadata = metadata_tb, meta_group = CONDITION, tag = tag)
 }
