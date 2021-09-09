@@ -4,27 +4,21 @@
 \alias{fgsea_plot}
 \title{Function to run fGSEA using the mSIGDB database from Broad}
 \usage{
-fgsea_plot(
-  res,
-  sig_res = NULL,
-  msigdb_species = "Homo sapiens",
-  msigdb_cat = "H",
-  gene_col = NULL,
-  rank_col = NULL,
-  padj = 0.01,
-  output_dir,
-  tag,
-  contrast
-)
+fgsea_plot(fgsea_res_tb, msigdb_cat)
+
+fgsea_plot(fgsea_res_tb, msigdb_cat)
 }
 \arguments{
+\item{fgsea_res_tb}{tibble of results from fgsea::fgsea}
+
+\item{msigdb_cat}{one of 'c("H", paste0("C", c(1:7)))',
+see: gsea-msigdb.org/gsea/msigdb/collections.jsp}
+
 \item{res}{output table from 'DESeq2_module()' (all genes not just sig)}
 
 \item{sig_res}{output table from 'DESeq2/limma/edger_module()' or combination thereof (used for table output)}
 
 \item{msigdb_species}{one of msigdbr::msigdbr_show_species(), default:"Homo sapiens"}
-
-\item{msigdb_cat}{one of 'c("H", paste0("C", c(1:7)))', see: gsea-msigdb.org/gsea/msigdb/collections.jsp}
 
 \item{gene_col}{the name of the column in tibble with gene names found in pathways, set to "rownames" if they are the rownames (default)}
 
@@ -37,12 +31,14 @@ fgsea_plot(
 \item{tag}{string used to prefix output}
 
 \item{contrast}{string to define the contrast being made, tags output}
-
-\item{gene_set}{genes of interest for fgsea (subset to these, use all if not specified)}
 }
 \value{
 msigdb_fgsea object
+
+msigdb_pathlist list object
 }
 \description{
 Function to run fGSEA using the mSIGDB database from Broad
+
+fgsea plotting
 }

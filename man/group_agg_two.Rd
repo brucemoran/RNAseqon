@@ -2,14 +2,14 @@
 % Please edit documentation in R/post_module_joins.R
 \name{group_agg_two}
 \alias{group_agg_two}
-\title{Aggregate 1 columns based on grouping on 2 column}
+\title{Aggregate column 1 based on grouping by column 2}
 \usage{
 group_agg_two(f, colns = NULL, pattern = NULL)
 }
 \arguments{
 \item{f}{table object with colnames specified in colns}
 
-\item{colns}{colnames of f on which to aggregate}
+\item{colns}{colnames of f on which to aggregate, group in that order!}
 
 \item{pattern}{string to grep for colnames on which to operate}
 }
@@ -17,5 +17,5 @@ group_agg_two(f, colns = NULL, pattern = NULL)
 agg_f aggregated gene ID, names table
 }
 \description{
-Aggregate 1 columns based on grouping on 2 column
+Aggregate column 1 based on grouping by column 2
 }

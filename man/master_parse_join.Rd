@@ -4,10 +4,12 @@
 \alias{master_parse_join}
 \title{Master list, join to give found-in-2 and all-3 tables}
 \usage{
-master_parse_join(input_dir)
+master_parse_join(input_dir, tpm_tb = NULL)
 }
 \arguments{
 \item{input_dir}{path where DESeq2, limma, edgeR RDS results files are held}
+
+\item{tpm_tb}{tpm tibble for adding to master_ist_sig ([\link{x}][\link{2}])}
 }
 \value{
 list object of 'found-in-2' and 'all-3' results, including unique cols from each module

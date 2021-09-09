@@ -38,7 +38,7 @@ ssgsea_pca <- function(pways, log2tpm_mat, msigdb_cat = "H", output_dir, contras
                              max.sz=1000,
                              ssgsea.norm=T)
 
-    ggp <- ssgsea_rotationPCA(x = ssgsea_res,
+    ggp <- ssgsea_rotationPCA(ssgsea = ssgsea_res,
                               hallmark_tb = hallmarks,
                               contrast = contrast,
                               metadata = metadata,
@@ -59,10 +59,15 @@ ssgsea_pca <- function(pways, log2tpm_mat, msigdb_cat = "H", output_dir, contras
 #' @param metadata tibble of sample, \<group\> where group colours the PCA
 #' @param contrast string to title plot
 #' @param returnData flag to allow data to be returned
+#' @param intgroup colname to use as group to colour in if not using Process Category
 #' @return ggp_pca_list ggplot2 object for printing, pca for safe keeping
 #' @export
 
-ssgsea_rotationPCA <- function(ssgsea, metadata, hallmark_tb = NULL, contrast, returnData = FALSE) {
+ssgsea_rotationPCA <- function(ssgsea, metadata, hallmark_tb = NULL, contrast, returnData = FALSE, group = NULL) {
+
+    if("sampleID" %in% colnames(metadata)){
+      colnames(metadata)[match("sampleID" , colnames(metadata))] <- "sample"
+    }
 
     pca <- prcomp(t(ssgsea))
     percentVar <- pca$sdev^2/sum(pca$sdev^2)
@@ -73,6 +78,7 @@ ssgsea_rotationPCA <- function(ssgsea, metadata, hallmark_tb = NULL, contrast, r
     ##make point data for samples
     p <- tibble::as_tibble(pca$x, rownames = "sample") %>%
          dplyr::left_join(metadata, .)
+    p$group <- as.factor(p$group)
 
     if(!is.null(hallmark_tb)){
       hallmark_tb$Hallmark_Name <- paste0("HALLMARK_", hallmark_tb$Hallmark_Name)
@@ -87,7 +93,7 @@ ssgsea_rotationPCA <- function(ssgsea, metadata, hallmark_tb = NULL, contrast, r
     if("Process_Category" %in% colnames(d)){
       colsh_p <- colnames(p)[2]
 
-      ggpp <- ggplot2::ggplot() + ggplot2::geom_segment(data = d,
+      ggp <- ggplot2::ggplot() + ggplot2::geom_segment(data = d,
                                 ggplot2::aes(x = 0, y = 0, xend = (PC1*2),
                                 yend = (PC2*2),
                                 group = Process_Category,
@@ -98,6 +104,12 @@ ssgsea_rotationPCA <- function(ssgsea, metadata, hallmark_tb = NULL, contrast, r
                                 size = 1.2,
                                 linetype = 1,
                                 inherit.aes = FALSE) +
+              ggplot2::geom_point(data = p,
+                                 ggplot2::aes_string(x = "PC1", y = "PC2",
+                                 shape = colsh_p),
+                                 size = 2.5,
+                                 show.legend = TRUE,
+                                 inherit.aes = FALSE) +
               ggrepel::geom_label_repel(data = d,
                                       ggplot2::aes(x = (PC1*2), y = (PC2*2),
                                       label = gsub("HALLMARK_", "", Hallmark_Name),
@@ -111,23 +123,14 @@ ssgsea_rotationPCA <- function(ssgsea, metadata, hallmark_tb = NULL, contrast, r
                             subtitle = "PCA plot using MsigDB Hallmark with Process_Category",
                             x = paste0("PC1: ", round(percentVar[1] *  100), "% variance"),y = paste0("PC2: ", round(percentVar[2] * 100), "% variance"))
 
-      ggp <- ggpp +
-             ggplot2::geom_point(data = p,
-                                ggplot2::aes_string(x = "PC1", y = "PC2",
-                                shape = colsh_p),
-                                size = 2.5,
-                                show.legend = TRUE,
-                                inherit.aes = FALSE)
-
     } else {
       stop("Unfinished, suggest using Hallmarks...")
-      # ggp <- ggplot2::ggplot(data = d, ggplot2::aes(x = PC1, y = PC2, group = intgroup, shape = intgroup, colour = intgroup)) +
-      #        ggplot2::geom_point(size = 3) +
-      #        ggplot2::scale_shape_discrete(solid = T) +
-      #        ggplot2::xlab(paste0("PC1: ", round(percentVar[1] *  100), "% variance")) +
-      #        ggplot2::ylab(paste0("PC2: ", round(percentVar[2] * 100), "% variance")) +
-      #        ggplot2::annotate("text",x=pca$x[,1], y = pca$x[,2]-0.4, label = colnames(x), cex = 1.6) +
-      #        ggplot2::ggtitle(paste0("PCA plot using ", intgroup))
+      ggp <- ggplot2::ggplot(data = p,
+                             ggplot2::aes(x = PC1, y = PC2, group = group)) +
+             ggplot2::geom_point(ggplot2::aes_string(shape = "group",
+                                                     colour = "group",
+                                                     fill = "group"),
+                                 size = 3)
     }
     ggp_pca_list <- list(ggplot = ggp, pca = pca)
     return(ggp_pca_list)

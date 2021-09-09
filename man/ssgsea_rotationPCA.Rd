@@ -9,7 +9,8 @@ ssgsea_rotationPCA(
   metadata,
   hallmark_tb = NULL,
   contrast,
-  returnData = FALSE
+  returnData = FALSE,
+  group = NULL
 )
 }
 \arguments{
@@ -22,6 +23,8 @@ ssgsea_rotationPCA(
 \item{contrast}{string to title plot}
 
 \item{returnData}{flag to allow data to be returned}
+
+\item{intgroup}{colname to use as group to colour in if not using Process Category}
 }
 \value{
 ggp_pca_list ggplot2 object for printing, pca for safe keeping
