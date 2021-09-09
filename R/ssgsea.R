@@ -78,7 +78,8 @@ ssgsea_rotationPCA <- function(ssgsea, metadata, hallmark_tb = NULL, contrast, r
     ##make point data for samples
     p <- tibble::as_tibble(pca$x, rownames = "sample") %>%
          dplyr::left_join(metadata, .)
-    p$group <- as.factor(p$group)
+    group <- colnames(metadata)[2]
+    p[[group]] <- as.factor(p[[group]])
 
     if(!is.null(hallmark_tb)){
       hallmark_tb$Hallmark_Name <- paste0("HALLMARK_", hallmark_tb$Hallmark_Name)
