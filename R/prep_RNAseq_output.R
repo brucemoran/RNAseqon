@@ -60,10 +60,7 @@ nf_core_rnaseq_star_salmon_parser <- function(path = NULL, delim_samples = NULL)
   }
 
   ##read in merged star-salmon results
-  ##parse names using "." for nicer colnames
-  olist <- lapply(c("salmon.merged.gene_counts.tsv",
-                    "salmon.merged.gene_tpm.tsv"), function(fl){
-    fc_merge <- readr::read_tsv(paste0(path, "/", fl))
+  proc_fcm <- function(fc_merge, count){
     coln_samples <- colnames(fc_merge[3:length(colnames(fc_merge))])
     n_coln_samples <- unlist(lapply(coln_samples, function(f){
       strsplit(f, delim_samples)[[1]][1]
@@ -72,14 +69,21 @@ nf_core_rnaseq_star_salmon_parser <- function(path = NULL, delim_samples = NULL)
                             "external_gene_name",
                             n_coln_samples)
     on_coln_samples <- n_coln_samples[order(n_coln_samples)]
-    fc_merge_so <- fc_merge %>% dplyr::select(1, 2, on_coln_samples) %>%
-                   dplyr::arrange(ensembl_gene_id)
+    if(count == "yes"){
+      dplyr::select(.data = fc_merge, 1, 2, on_coln_samples) %>%
+      dplyr::arrange(ensembl_gene_id) %>%
+      dplyr::select(1, on_coln_samples) %>%
+      as.data.frame() %>%
+      tibble::column_to_rownames("ensembl_gene_id")
+    } else {
+      return(tibble::as_tibble(fc_merge))
+    }
+  }
 
-    fc_co <- fc_merge_so %>%
-             dplyr::select(1, on_coln_samples) %>%
-             as.data.frame() %>%
-             tibble::column_to_rownames("ensembl_gene_id")
-  })
+  count_df <- proc_fcm(readr::read_tsv(paste0(path, "/salmon.merged.gene_counts.tsv")),
+                       count = "yes")
+  tpm_tb <- proc_fcm(readr::read_tsv(paste0(path, "/salmon.merged.gene_tpm.tsv")),
+                     count = "no")
 
   ##remove zero-count genes
   nzero <- function(x){
@@ -87,9 +91,9 @@ nf_core_rnaseq_star_salmon_parser <- function(path = NULL, delim_samples = NULL)
     dplyr::mutate(dplyr::across(where(is.numeric), round, 0))
   }
 
-  count_data <- nzero(olist[[1]])
+  count_data <- nzero(count_df)
   return(list(count_data = count_data,
-              tpm_tb = tibble::as_tibble(olist[[2]], rownames = "ensembl_gene_id")))
+              tpm_tb = tpm_tb))
 }
 
 #' Take metadata CSV, parse Kallisto output and return a Sleuth object with raw counts
