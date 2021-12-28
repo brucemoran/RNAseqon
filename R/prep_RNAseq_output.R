@@ -45,14 +45,14 @@ nf_core_rnaseq_featco_parser <- function(tag = NULL){
 #'
 #' @param path string to star_salmon/salmon.merged.gene_counts.tsv output
 #' @param delim_samples string to delimit sample names (default = "\\.")
-#' @return list [[c("count_data", "tpm_tb"]]
+#' @return list [[c("count_data", "tpm_tb")]]
 #' @importFrom magrittr '%>%'
 #' @export
 
 nf_core_rnaseq_star_salmon_parser <- function(path = NULL, delim_samples = NULL){
 
   if(is.null(path)){
-    "nf-core_rnaseq/star_salmon"
+    path <- "nf-core_rnaseq/star_salmon"
   }
 
   if(is.null(delim_samples)){
@@ -73,13 +73,13 @@ nf_core_rnaseq_star_salmon_parser <- function(path = NULL, delim_samples = NULL)
                             n_coln_samples)
     on_coln_samples <- n_coln_samples[order(n_coln_samples)]
     fc_merge_so <- fc_merge %>% dplyr::select(1, 2, on_coln_samples) %>%
-             dplyr::arrange(ensembl_gene_id)
+                   dplyr::arrange(ensembl_gene_id)
 
     fc_co <- fc_merge_so %>%
              dplyr::select(1, on_coln_samples) %>%
              as.data.frame() %>%
-             column_to_rownames("ensembl_gene_id")
-  }
+             tibble::column_to_rownames("ensembl_gene_id")
+  })
 
   ##remove zero-count genes
   nzero <- function(x){
@@ -89,7 +89,7 @@ nf_core_rnaseq_star_salmon_parser <- function(path = NULL, delim_samples = NULL)
 
   count_data <- nzero(olist[[1]])
   return(list(count_data = count_data,
-              tpm_tb = olist[[2]]))
+              tpm_tb = tibble::as_tibble(olist[[2]], rownames = "ensembl_gene_id")))
 }
 
 #' Take metadata CSV, parse Kallisto output and return a Sleuth object with raw counts
