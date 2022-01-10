@@ -6,10 +6,11 @@
 #' @param output_dir path to where output goes
 #' @param contrast string used to prefix output naming the contrast being investigated
 #' @param metadata tibble of sample, \<group\> where group colours the PCA
+#' @param plot_out logical plot output to screen (for knitr; default NULL)
 #' @return ssgsea_ggp_list results table of each geneset and sample
 #' @export
 
-ssgsea_pca <- function(pways, log2tpm_mat, msigdb_cat = "H", output_dir, contrast, metadata) {
+ssgsea_pca <- function(pways, log2tpm_mat, msigdb_cat = "H", output_dir, contrast, metadata, plot_out = NULL) {
 
   print(paste0("Working on: ", contrast))
 
@@ -45,6 +46,9 @@ ssgsea_pca <- function(pways, log2tpm_mat, msigdb_cat = "H", output_dir, contras
                               returnData = FALSE)
 
     readr::write_tsv(tibble::as_tibble(ssgsea_res, rownames = rns), file = paste0(out_dir, "/data/", contrast , ".ssgsea_res.tsv"))
+    if(!is.null(plot_out)){
+      ggp[[1]]
+    }
     ggplot2::ggsave(ggp[[1]], file = paste0(out_dir, "/plots/", contrast , ".ssgsea_rotationPCA.pdf"))
     ssgsea_ggp_list <- list(ssgsea_res = ssgsea_res, ggplot_pca = ggp)
     return(ssgsea_ggp_list)

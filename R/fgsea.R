@@ -10,10 +10,11 @@
 #' @param output_dir path to where output goes
 #' @param tag string used to prefix output
 #' @param contrast string to define the contrast being made, tags output
+#' @param plot_out logical plot output to screen (for knitr; default NULL)
 #' @return msigdb_fgsea object
 #' @export
 
-fgsea_plot <- function(res, sig_res = NULL, msigdb_species = "Homo sapiens", msigdb_cat = "H", gene_col = NULL, rank_col = NULL, padj = 0.01, output_dir, tag, contrast) {
+fgsea_plot <- function(res, sig_res = NULL, msigdb_species = "Homo sapiens", msigdb_cat = "H", gene_col = NULL, rank_col = NULL, padj = 0.01, output_dir, tag, contrast, plot_out = NULL) {
 
   print("Running: fgsea_plot()")
 
@@ -96,6 +97,9 @@ fgsea_plot <- function(res, sig_res = NULL, msigdb_species = "Homo sapiens", msi
 
   ##plotting
   gg_fgsea <- fgsea_plotting(fgsea_res_tb = fgsea_res_sig_tb, msigdb_cat = msigdb_cat)
+  if(!is.null(plot_out)){
+    gg_fgsea
+  }
   ggplot2::ggsave(gg_fgsea, file = paste0(out_dir, "/plots/", tag , ".fgsea_sig.ggplot2.pdf"))
 
   ##output results per gene
