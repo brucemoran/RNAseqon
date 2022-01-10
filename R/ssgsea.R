@@ -6,11 +6,11 @@
 #' @param output_dir path to where output goes
 #' @param contrast string used to prefix output naming the contrast being investigated
 #' @param metadata tibble of sample, \<group\> where group colours the PCA
-#' @param plot_out logical plot output to screen (for knitr; default NULL)
+#' @param plot_out logical plot output to screen (for knitr; default TRUE)
 #' @return ssgsea_ggp_list results table of each geneset and sample
 #' @export
 
-ssgsea_pca <- function(pways, log2tpm_mat, msigdb_cat = "H", output_dir, contrast, metadata, plot_out = NULL) {
+ssgsea_pca <- function(pways, log2tpm_mat, msigdb_cat = "H", output_dir, contrast, metadata, plot_out = TRUE) {
 
   print(paste0("Working on: ", contrast))
 
