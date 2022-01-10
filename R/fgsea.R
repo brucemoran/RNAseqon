@@ -1,10 +1,10 @@
 #' Function to run fGSEA using the mSIGDB database from Broad
 #'
-#' @param res output table from 'DESeq2_module()' (all genes not just sig)
-#' @param sig_res output table from 'DESeq2/limma/edger_module()' or combination thereof (used for table output)
+#' @param res data frame (all genes not just sig)
+#' @param sig_res data frame of significant results
 #' @param msigdb_species one of msigdbr::msigdbr_show_species(), default:"Homo sapiens"
 #' @param msigdb_cat one of 'c("H", paste0("C", c(1:7)))', see: gsea-msigdb.org/gsea/msigdb/collections.jsp
-#' @param gene_col the name of the column in tibble with gene names found in pathways, set to "rownames" if they are the rownames (default)
+#' @param gene_col the name of the column in data frame with gene names found in pathways, set to "rownames" if they are the rownames (default)
 #' @param rank_col the name of the column in tibble which ranks genes for fgsea (default: "stat" for DESeq2 results; limma - use "t", edgeR - unsure)
 #' @param padj the significance threshold
 #' @param output_dir path to where output goes
@@ -95,7 +95,7 @@ fgsea_plot <- function(res, sig_res = NULL, msigdb_species = "Homo sapiens", msi
   fgsea_res_sig_tb <- dplyr::arrange(.data = fgsea_res_sig_tb, desc(NES))
 
   ##plotting
-  gg_fgsea <- fgsea_plot(fgsea_res_tb = fgsea_res_sig_tb, msigdb_cat = msigdb_cat)
+  gg_fgsea <- fgsea_plotting(fgsea_res_tb = fgsea_res_sig_tb, msigdb_cat = msigdb_cat)
   ggplot2::ggsave(gg_fgsea, file = paste0(out_dir, "/plots/", tag , ".fgsea_sig.ggplot2.pdf"))
 
   ##output results per gene
@@ -187,7 +187,7 @@ msigdb_pathways_to_list <- function(msigdb_species, msigdb_cat){
 #' @return msigdb_pathlist list object
 #' @export
 
-fgsea_plot <- function(fgsea_res_tb, msigdb_cat){
+fgsea_plotting <- function(fgsea_res_tb, msigdb_cat){
   gg_fgsea <- ggplot2::ggplot(fgsea_res_tb, ggplot2::aes(reorder(pathway, NES), NES)) +
               ggplot2::geom_col(ggplot2::aes(fill = padj)) +
               ggplot2::coord_flip() +
