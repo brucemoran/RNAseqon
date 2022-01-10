@@ -2,16 +2,18 @@
 % Please edit documentation in R/prep_RNAseq_output.R
 \name{nf_core_rnaseq_star_salmon_parser}
 \alias{nf_core_rnaseq_star_salmon_parser}
-\title{Parse featurecounts input as a follow-on from standard nf-core/rnaseq pipeline using STAR-Salmon (v3.3 currently)}
+\title{Parse Salmon_STAR input as a follow-on from standard nf-core/rnaseq pipeline using STAR-Salmon (v3.3 currently)}
 \usage{
-nf_core_rnaseq_star_salmon_parser(tag = NULL)
+nf_core_rnaseq_star_salmon_parser(path = NULL, delim_samples = NULL)
 }
 \arguments{
-\item{tag}{string to prefix output}
+\item{path}{string to star_salmon/salmon.merged.gene_counts.tsv output}
+
+\item{delim_samples}{string to delimit sample names (default = "\\.")}
 }
 \value{
-nz_fc_co raw count object with no lines summing to zeros
+list [\link{c("count_data", "tpm_tb")}]
 }
 \description{
-Parse featurecounts input as a follow-on from standard nf-core/rnaseq pipeline using STAR-Salmon (v3.3 currently)
+Parse Salmon_STAR input as a follow-on from standard nf-core/rnaseq pipeline using STAR-Salmon (v3.3 currently)
 }
