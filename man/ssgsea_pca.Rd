@@ -10,7 +10,8 @@ ssgsea_pca(
   msigdb_cat = "H",
   output_dir,
   contrast,
-  metadata
+  metadata,
+  plot_out = NULL
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ ssgsea_pca(
 \item{contrast}{string used to prefix output naming the contrast being investigated}
 
 \item{metadata}{tibble of sample, \<group\> where group colours the PCA}
+
+\item{plot_out}{logical plot output to screen (for knitr; default NULL)}
 }
 \value{
 ssgsea_ggp_list results table of each geneset and sample

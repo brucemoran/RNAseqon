@@ -14,7 +14,8 @@ fgsea_plot(
   padj = 0.01,
   output_dir,
   tag,
-  contrast
+  contrast,
+  plot_out = NULL
 )
 }
 \arguments{
@@ -37,6 +38,8 @@ fgsea_plot(
 \item{tag}{string used to prefix output}
 
 \item{contrast}{string to define the contrast being made, tags output}
+
+\item{plot_out}{logical plot output to screen (for knitr; default NULL)}
 }
 \value{
 msigdb_fgsea object
