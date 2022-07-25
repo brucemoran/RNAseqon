@@ -39,7 +39,7 @@ ssgsea_pca <- function(pways, log2tpm_mat, msigdb_cat = "H", output_dir, contras
                              max.sz=1000,
                              ssgsea.norm=T)
 
-    ggp <- ssgsea_rotationPCA(ssgsea = ssgsea_res,
+    ggp <- RNAseqon::ssgsea_rotationPCA(ssgsea = ssgsea_res,
                               hallmark_tb = hallmarks,
                               contrast = contrast,
                               metadata = metadata,
@@ -77,66 +77,68 @@ ssgsea_rotationPCA <- function(ssgsea, metadata, hallmark_tb = NULL, contrast, r
     percentVar <- pca$sdev^2/sum(pca$sdev^2)
 
     ##make rotation data for hallmarks
-    d <- data.frame(PC1 = pca$rotation[, 1], PC2 = pca$rotation[, 2], Hallmark_Name = rownames(pca$rotation))
+    if(dim(pca$rotation)[2]>1){
+      d <- data.frame(PC1 = pca$rotation[, 1], PC2 = pca$rotation[, 2], Hallmark_Name = rownames(pca$rotation))
 
-    ##make point data for samples
-    p <- tibble::as_tibble(pca$x, rownames = "sample") %>%
-         dplyr::left_join(metadata, .)
-    group <- colnames(metadata)[2]
-    p[[group]] <- as.factor(p[[group]])
+      ##make point data for samples
+      p <- tibble::as_tibble(pca$x, rownames = "sample") %>%
+           dplyr::left_join(metadata, .)
+      group <- colnames(metadata)[2]
+      p[[group]] <- as.factor(p[[group]])
 
-    if(!is.null(hallmark_tb)){
-      hallmark_tb$Hallmark_Name <- paste0("HALLMARK_", hallmark_tb$Hallmark_Name)
-      d <- dplyr::left_join(d, hallmark_tb, by = "Hallmark_Name")
-      d$Process_Category[is.na(d$Process_Category)] <- "other"
-    }
-    if (returnData) {
-      attr(d, "percentVar") <- percentVar[1:2]
-      return(d)
-    }
+      if(!is.null(hallmark_tb)){
+        hallmark_tb$Hallmark_Name <- paste0("HALLMARK_", hallmark_tb$Hallmark_Name)
+        d <- dplyr::left_join(d, hallmark_tb, by = "Hallmark_Name")
+        d$Process_Category[is.na(d$Process_Category)] <- "other"
+      }
+      if (returnData) {
+        attr(d, "percentVar") <- percentVar[1:2]
+        return(d)
+      }
 
-    if("Process_Category" %in% colnames(d)){
-      colsh_p <- colnames(p)[2]
+      if("Process_Category" %in% colnames(d)){
+        colsh_p <- colnames(p)[2]
 
-      ggp <- ggplot2::ggplot() + ggplot2::geom_segment(data = d,
-                                ggplot2::aes(x = 0, y = 0, xend = (PC1*2),
-                                yend = (PC2*2),
-                                group = Process_Category,
-                                color = Process_Category),
-                                arrow = ggplot2::arrow(length = ggplot2::unit(1/2, "picas"),
-                                                       ends="last",
-                                                       type = "closed"),
-                                size = 1.2,
-                                linetype = 1,
-                                inherit.aes = FALSE) +
-              ggplot2::geom_point(data = p,
-                                 ggplot2::aes_string(x = "PC1", y = "PC2",
-                                 shape = colsh_p),
-                                 size = 2.5,
-                                 show.legend = TRUE,
-                                 inherit.aes = FALSE) +
-              ggrepel::geom_label_repel(data = d,
-                                      ggplot2::aes(x = (PC1*2), y = (PC2*2),
-                                      label = gsub("HALLMARK_", "", Hallmark_Name),
-                                      group = Process_Category,
-                                      colour = Process_Category),
-                                      size = 2.5,
-                                      fontface = "bold",
-                                      show.legend = FALSE,
-                                      inherit.aes = FALSE) +
-              ggplot2::labs(title = contrast,
-                            subtitle = "PCA plot using MsigDB Hallmark with Process_Category",
-                            x = paste0("PC1: ", round(percentVar[1] *  100), "% variance"),y = paste0("PC2: ", round(percentVar[2] * 100), "% variance"))
+        ggp <- ggplot2::ggplot() + ggplot2::geom_segment(data = d,
+                                  ggplot2::aes(x = 0, y = 0, xend = (PC1*2),
+                                  yend = (PC2*2),
+                                  group = Process_Category,
+                                  color = Process_Category),
+                                  arrow = ggplot2::arrow(length = ggplot2::unit(1/2, "picas"),
+                                                         ends="last",
+                                                         type = "closed"),
+                                  size = 1.2,
+                                  linetype = 1,
+                                  inherit.aes = FALSE) +
+                ggplot2::geom_point(data = p,
+                                   ggplot2::aes_string(x = "PC1", y = "PC2",
+                                   shape = colsh_p),
+                                   size = 2.5,
+                                   show.legend = TRUE,
+                                   inherit.aes = FALSE) +
+                ggrepel::geom_label_repel(data = d,
+                                        ggplot2::aes(x = (PC1*2), y = (PC2*2),
+                                        label = gsub("HALLMARK_", "", Hallmark_Name),
+                                        group = Process_Category,
+                                        colour = Process_Category),
+                                        size = 2.5,
+                                        fontface = "bold",
+                                        show.legend = FALSE,
+                                        inherit.aes = FALSE) +
+                ggplot2::labs(title = contrast,
+                              subtitle = "PCA plot using MsigDB Hallmark with Process_Category",
+                              x = paste0("PC1: ", round(percentVar[1] *  100), "% variance"),y = paste0("PC2: ", round(percentVar[2] * 100), "% variance"))
 
-    } else {
-      stop("Unfinished, suggest using Hallmarks...")
-      ggp <- ggplot2::ggplot(data = p,
-                             ggplot2::aes(x = PC1, y = PC2, group = group)) +
-             ggplot2::geom_point(ggplot2::aes_string(shape = "group",
-                                                     colour = "group",
-                                                     fill = "group"),
-                                 size = 3)
-    }
-    ggp_pca_list <- list(ggplot = ggp, pca = pca)
-    return(ggp_pca_list)
+      } else {
+        stop("Unfinished, suggest using Hallmarks...")
+        ggp <- ggplot2::ggplot(data = p,
+                               ggplot2::aes(x = PC1, y = PC2, group = group)) +
+               ggplot2::geom_point(ggplot2::aes_string(shape = "group",
+                                                       colour = "group",
+                                                       fill = "group"),
+                                   size = 3)
+      }
+      ggp_pca_list <- list(ggplot = ggp, pca = pca)
+      return(ggp_pca_list)
+  }
 }
