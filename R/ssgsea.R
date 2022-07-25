@@ -140,5 +140,7 @@ ssgsea_rotationPCA <- function(ssgsea, metadata, hallmark_tb = NULL, contrast, r
       }
       ggp_pca_list <- list(ggplot = ggp, pca = pca)
       return(ggp_pca_list)
+  } else {
+    return(NULL)
   }
 }
